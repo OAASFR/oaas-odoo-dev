@@ -1,0 +1,39 @@
+<odoo>
+  <record id="res_config_settings_view_form_oaas_llms" model="ir.ui.view">
+    <field name="name">res.config.settings.view.form.oaas.llms</field>
+    <field name="model">res.config.settings</field>
+    <field name="inherit_id" ref="website.res_config_settings_view_form"/>
+    <field name="arch" type="xml">
+      <xpath expr="//block[@id='website_info_settings']" position="after">
+        <block title="Fichiers LLM (llms.txt)" id="oaas_llms_settings">
+          <setting string="Mode de génération"
+                   help="Auto : contenu généré depuis les articles de blog publiés. Manuel : contenu personnalisé servi tel quel.">
+            <field name="oaas_llms_mode" widget="radio"/>
+          </setting>
+          <setting string="En-tête"
+                   help="Préambule ajouté en haut de llms.txt et llms-full.txt (titre, description du site, contact…).">
+            <field name="oaas_llms_header" placeholder="> Description du site, contact, etc."/>
+          </setting>
+          <setting string="Contenu manuel"
+                   attrs="{'invisible': [('oaas_llms_mode', '!=', 'manual')]}">
+            <div class="content-group">
+              <button name="action_oaas_generate_llms" type="object"
+                      string="Pré-remplir depuis les articles" class="btn-link"
+                      icon="fa-refresh"/>
+              <label for="oaas_llms_txt" string="llms.txt" class="o_form_label mt8"/>
+              <field name="oaas_llms_txt" placeholder="Contenu servi sur /llms.txt"/>
+              <label for="oaas_llms_full_txt" string="llms-full.txt" class="o_form_label mt8"/>
+              <field name="oaas_llms_full_txt" placeholder="Contenu servi sur /llms-full.txt"/>
+            </div>
+          </setting>
+          <setting string="Aperçu des URL servies">
+            <div>
+              <a href="/llms.txt" target="_blank">/llms.txt</a> ·
+              <a href="/llms-full.txt" target="_blank">/llms-full.txt</a>
+            </div>
+          </setting>
+        </block>
+      </xpath>
+    </field>
+  </record>
+</odoo>
