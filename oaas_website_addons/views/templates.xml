@@ -1,0 +1,115 @@
+<odoo>
+<!--
+        <template id="listing">
+          <ul>
+            <li t-foreach="objects" t-as="object">
+              <a t-attf-href="#{ root }/objects/#{ object.id }">
+                <t t-esc="object.display_name"/>
+              </a>
+            </li>
+          </ul>
+        </template>
+        <template id="object">
+          <h1><t t-esc="object.display_name"/></h1>
+          <dl>
+            <t t-foreach="object._fields" t-as="field">
+              <dt><t t-esc="field"/></dt>
+              <dd><t t-esc="object[field]"/></dd>
+            </t>
+          </dl>
+        </template>
+-->
+        <template id="my_slideshow_template" inherit_id="website.layout">
+            <xpath expr="//head" position="inside">
+                <link rel="stylesheet" type="text/css" href="/oaas_website_addons/static/src/css/my_slideshow_template.css?v=tech-4x4-png-v2"/>
+            </xpath>
+        </template>
+
+        <template id="brand_promotion" inherit_id="website.brand_promotion">
+            <xpath expr="//t[@t-call='web.brand_promotion_message']" position="replace">
+            </xpath>
+        </template>
+
+        <template id="s_oaas_tech" name="OAASTechnologies">
+                <section class="s_oaas_tech">
+                   <div class="container-fluid py-5 carrousel_logo_-_voir_site_1_dy">
+                        <div class="container mx-auto text-center">
+                            <div class="oaas-tech-eyebrow">Technology stack</div>
+                            <h2 class="oaas-tech-title">Technologies we use to build, host and monitor platforms</h2>
+                            <div class="oaas-tech-grid">
+                                <a class="oaas-tech-card" href="https://angular.dev/" target="_blank">
+                                    <img class="oaas-tech-logo" src="/oaas_website_addons/static/src/img/tech/angular.png" alt="Angular logo" loading="lazy"/>
+                                    <span>Angular</span>
+                                </a>
+                                <a class="oaas-tech-card" href="https://www.djangoproject.com/" target="_blank">
+                                    <img class="oaas-tech-logo" src="/oaas_website_addons/static/src/img/tech/django.png" alt="Django logo" loading="lazy"/>
+                                    <span>Django</span>
+                                </a>
+                                <a class="oaas-tech-card" href="https://www.python.org/" target="_blank">
+                                    <img class="oaas-tech-logo" src="/oaas_website_addons/static/src/img/tech/python.png" alt="Python logo" loading="lazy"/>
+                                    <span>Python</span>
+                                </a>
+                                <a class="oaas-tech-card" href="https://www.postgresql.org/" target="_blank">
+                                    <img class="oaas-tech-logo" src="/oaas_website_addons/static/src/img/tech/postgresql.png" alt="PostgreSQL logo" loading="lazy"/>
+                                    <span>PostgreSQL</span>
+                                </a>
+                                <a class="oaas-tech-card" href="https://www.odoo.com/" target="_blank">
+                                    <img class="oaas-tech-logo" src="/oaas_website_addons/static/src/img/tech/odoo.png" alt="Odoo logo" loading="lazy"/>
+                                    <span>Odoo</span>
+                                </a>
+                                <a class="oaas-tech-card" href="https://grafana.com/" target="_blank">
+                                    <img class="oaas-tech-logo" src="/oaas_website_addons/static/src/img/tech/grafana.png" alt="Grafana logo" loading="lazy"/>
+                                    <span>Grafana</span>
+                                </a>
+                                <a class="oaas-tech-card" href="https://www.dynatrace.com/" target="_blank">
+                                    <img class="oaas-tech-logo" src="/oaas_website_addons/static/src/img/tech/dynatrace.png" alt="Dynatrace logo" loading="lazy"/>
+                                    <span>Dynatrace</span>
+                                </a>
+                                <a class="oaas-tech-card" href="https://www.veeam.com/" target="_blank">
+                                    <img class="oaas-tech-logo" src="/oaas_website_addons/static/src/img/tech/veeam.png" alt="Veeam logo" loading="lazy"/>
+                                    <span>Veeam</span>
+                                </a>
+                                <a class="oaas-tech-card" href="https://www.proxmox.com/" target="_blank">
+                                    <img class="oaas-tech-logo" src="/oaas_website_addons/static/src/img/tech/proxmox.png" alt="Proxmox logo" loading="lazy"/>
+                                    <span>Proxmox</span>
+                                </a>
+                                <a class="oaas-tech-card" href="https://aws.amazon.com/" target="_blank">
+                                    <img class="oaas-tech-logo" src="/oaas_website_addons/static/src/img/tech/aws.png?v=2" alt="AWS logo" loading="lazy"/>
+                                    <span>AWS</span>
+                                </a>
+                                <a class="oaas-tech-card" href="https://azure.microsoft.com/" target="_blank">
+                                    <img class="oaas-tech-logo" src="/oaas_website_addons/static/src/img/tech/azure.png?v=2" alt="Azure logo" loading="lazy"/>
+                                    <span>Azure</span>
+                                </a>
+                                <a class="oaas-tech-card" href="https://claude.ai/" target="_blank">
+                                    <img class="oaas-tech-logo" src="/oaas_website_addons/static/src/img/tech/claude.png" alt="Claude logo" loading="lazy"/>
+                                    <span>Claude</span>
+                                </a>
+                                <a class="oaas-tech-card" href="https://ollama.com/" target="_blank">
+                                    <img class="oaas-tech-logo" src="/oaas_website_addons/static/src/img/tech/ollama.png" alt="Ollama logo" loading="lazy"/>
+                                    <span>Ollama</span>
+                                </a>
+                                <a class="oaas-tech-card" href="https://ubuntu.com/" target="_blank">
+                                    <img class="oaas-tech-logo" src="/oaas_website_addons/static/src/img/tech/ubuntu.png" alt="Ubuntu logo" loading="lazy"/>
+                                    <span>Ubuntu</span>
+                                </a>
+                                <a class="oaas-tech-card" href="https://about.gitlab.com/topics/ci-cd/" target="_blank">
+                                    <img class="oaas-tech-logo" src="/oaas_website_addons/static/src/img/tech/cicd.png" alt="CI/CD logo" loading="lazy"/>
+                                    <span>CI/CD</span>
+                                </a>
+                                <a class="oaas-tech-card" href="https://www.sonarsource.com/products/sonarqube/" target="_blank">
+                                    <img class="oaas-tech-logo" src="/oaas_website_addons/static/src/img/tech/sonarqube.png" alt="SonarQube logo" loading="lazy"/>
+                                    <span>SonarQube</span>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+        </template>
+
+        <template id="external_snippets_add" inherit_id="website.snippets" priority="8">
+             <xpath expr="//div[@id='snippet_feature']//t[@t-snippet][last()]" position="after">
+                <t t-snippet="oaas_website_addons.s_oaas_tech"/>
+            </xpath>
+        </template>
+</odoo>

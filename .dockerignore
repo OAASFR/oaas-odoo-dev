@@ -1,0 +1,6 @@
+.git
+.gitignore
+deploy.sh
+*.md
+db-data
+odoo-data

@@ -1,0 +1,172 @@
+section.s_oaas_tech {
+	background:
+		radial-gradient(circle at 10% 20%, rgba(255, 45, 55, 0.22), transparent 26rem),
+		radial-gradient(circle at 85% 5%, rgba(105, 87, 255, 0.28), transparent 28rem),
+		linear-gradient(135deg, #241a68 0%, #312783 52%, #1b164d 100%);
+}
+
+section.s_oaas_tech .carrousel_logo_-_voir_site_1_dy {
+	background: transparent !important;
+}
+
+section.s_oaas_tech .container::before {
+	display: none !important;
+}
+
+.oaas-tech-eyebrow {
+	color: #ff2d37;
+	font-size: 0.82rem;
+	font-weight: 800;
+	letter-spacing: 0.16em;
+	line-height: 1.2;
+	margin-bottom: 0.75rem;
+	text-transform: uppercase;
+}
+
+.oaas-tech-title {
+	color: #ffffff;
+	font-size: clamp(1.6rem, 3vw, 2.45rem);
+	font-weight: 800;
+	line-height: 1.12;
+	margin: 0 auto 2.25rem;
+	max-width: 780px;
+}
+
+.oaas-tech-grid {
+	display: grid !important;
+	gap: 1rem !important;
+	grid-template-columns: repeat(4, 150px) !important;
+	justify-content: center !important;
+	margin: 0 auto !important;
+	max-width: 648px !important;
+	width: 100% !important;
+}
+
+.oaas-tech-card {
+	align-items: center;
+	aspect-ratio: auto !important;
+	background:
+		linear-gradient(180deg, rgba(255, 255, 255, 0.16), rgba(255, 255, 255, 0.06));
+	border: 1px solid rgba(255, 255, 255, 0.22);
+	border-radius: 22px;
+	box-shadow: 0 18px 45px rgba(7, 5, 30, 0.22);
+	color: #ffffff;
+	display: flex !important;
+	flex-direction: column;
+	font-size: 0.98rem;
+	font-weight: 750;
+	gap: 0.55rem;
+	height: 104px !important;
+	justify-content: center;
+	overflow: hidden;
+	padding: 0.8rem !important;
+	position: relative;
+	text-decoration: none;
+	transition: transform 180ms ease, border-color 180ms ease, background 180ms ease, box-shadow 180ms ease;
+}
+
+.oaas-tech-card::before {
+	background: radial-gradient(circle, rgba(255, 255, 255, 0.2), transparent 58%);
+	content: "";
+	height: 7rem;
+	position: absolute;
+	right: -3.5rem;
+	top: -3.5rem;
+	width: 7rem;
+}
+
+.oaas-tech-card:hover,
+.oaas-tech-card:focus {
+	background:
+		linear-gradient(180deg, rgba(255, 255, 255, 0.23), rgba(255, 255, 255, 0.09));
+	border-color: rgba(255, 45, 55, 0.86);
+	box-shadow: 0 22px 60px rgba(7, 5, 30, 0.34);
+	color: #ffffff;
+	text-decoration: none;
+	transform: translateY(-5px);
+}
+
+.oaas-tech-logo {
+	display: block !important;
+	filter: brightness(0) invert(1) drop-shadow(0 8px 14px rgba(255, 45, 55, 0.14));
+	height: auto !important;
+	max-height: 34px !important;
+	max-width: 48px !important;
+	object-fit: contain !important;
+	position: relative;
+	width: auto !important;
+}
+
+.oaas-tech-logo-wide {
+	max-width: 58px !important;
+}
+
+.oaas-tech-monogram {
+	align-items: center;
+	border: 2px solid rgba(255, 255, 255, 0.9);
+	border-radius: 1rem;
+	display: flex;
+	filter: drop-shadow(0 8px 14px rgba(255, 45, 55, 0.14));
+	font-size: 1rem;
+	font-weight: 900;
+	height: 2.35rem;
+	justify-content: center;
+	letter-spacing: 0.04em;
+	position: relative;
+	width: 2.35rem;
+}
+
+.oaas-tech-card:hover .oaas-tech-logo,
+.oaas-tech-card:focus .oaas-tech-logo {
+	filter: brightness(0) invert(1) drop-shadow(0 8px 14px rgba(255, 45, 55, 0.34));
+}
+
+.oaas-tech-wordmark {
+	align-items: center;
+	color: #ffffff;
+	display: flex;
+	filter: drop-shadow(0 8px 14px rgba(255, 45, 55, 0.14));
+	font-size: 1.35rem;
+	font-weight: 900;
+	height: 2.35rem;
+	justify-content: center;
+	letter-spacing: 0.02em;
+	line-height: 1;
+	position: relative;
+}
+
+.oaas-tech-wordmark-small {
+	font-size: 1.05rem;
+	letter-spacing: 0.06em;
+}
+
+.oaas-tech-card span {
+	font-size: 0.88rem !important;
+	line-height: 1.1 !important;
+	position: relative;
+}
+
+@media (max-width: 991.98px) {
+	.oaas-tech-grid {
+		grid-template-columns: repeat(4, 140px) !important;
+		max-width: 604px !important;
+	}
+
+	.oaas-tech-card {
+		height: 100px !important;
+	}
+}
+
+@media (max-width: 767.98px) {
+	.oaas-tech-grid {
+		grid-template-columns: repeat(2, 140px) !important;
+		max-width: 296px !important;
+	}
+}
+
+@media (max-width: 399.98px) {
+	.oaas-tech-grid {
+		grid-template-columns: 140px !important;
+		max-width: 140px !important;
+	}
+}

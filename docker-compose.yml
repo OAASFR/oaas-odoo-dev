@@ -1,0 +1,36 @@
+services:
+  db:
+    image: postgres:15
+    container_name: oaas-db
+    environment:
+      POSTGRES_DB: postgres
+      POSTGRES_USER: odoo
+      POSTGRES_PASSWORD: odoo
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "odoo"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+  odoo:
+    build: .
+    container_name: oaas-odoo
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "8069:8069"   # Odoo web
+      - "8072:8072"   # longpolling / websocket
+    volumes:
+      - odoo-data:/var/lib/odoo
+      - ./odoo.conf:/etc/odoo/odoo.conf:ro
+      - ./oaas_website_addons:/mnt/extra-addons/oaas_website_addons:ro
+      - ./oaas_docusign_addons:/mnt/extra-addons/oaas_docusign_addons:ro
+    restart: unless-stopped
+
+volumes:
+  db-data:
+  odoo-data:
