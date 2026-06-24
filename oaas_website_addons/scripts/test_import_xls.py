@@ -19,9 +19,36 @@ PASSWORD = 'odoo'
 URI = 'postgresql://%s:%s@%s:%d/%s' % (USERNAME, PASSWORD, HOST, PORT, DATABASE)
 
 
+# Largeur max (px) des images stockees : au-dela on redimensionne. 1920px
+# couvre largement un affichage full-width sur grand ecran tout en evitant de
+# stocker des images de plusieurs dizaines de Mpx (lourdeur base + site).
+MAX_IMAGE_WIDTH = 1920
+
+
+def _resized_image_bytes(stream):
+	# Redimensionne l'image si elle depasse MAX_IMAGE_WIDTH, en conservant le
+	# ratio et le format d'origine. Retourne (octets, format_pil) ; en cas
+	# d'echec (format non gere par PIL, etc.) on retombe sur l'image d'origine.
+	try:
+		import io
+		img = PILImage.open(io.BytesIO(stream))
+		fmt = img.format  # 'PNG', 'JPEG', ...
+		if img.width <= MAX_IMAGE_WIDTH:
+			return stream, fmt
+		ratio = MAX_IMAGE_WIDTH / float(img.width)
+		new_size = (MAX_IMAGE_WIDTH, max(1, int(img.height * ratio)))
+		img = img.resize(new_size, PILImage.LANCZOS)
+		buf = io.BytesIO()
+		img.save(buf, format=fmt)
+		return buf.getvalue(), fmt
+	except Exception:
+		return stream, None
+
+
 def add_attachment_file(file, record, i, col_start):
 	attachments = record.env['ir.attachment']
 	stream = file.ref.getvalue()
+	stream, _fmt = _resized_image_bytes(stream)
 	file_data_base64 = base64.b64encode(stream).decode('ascii')
 	attachment_id = attachments.sudo().create({
 		'name': str(record.id) + "_" + str(i) + "_" + str(col_start) + "." + file.format,

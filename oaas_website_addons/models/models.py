@@ -4,6 +4,17 @@ import json
 
 import openpyxl
 from PIL import Image as PILImage
+
+# openpyxl charge les images embarquees via PIL des load_workbook(). Certaines
+# images du fichier Excel sont tres grandes (> 89 Mpx) et declenchent la
+# protection "decompression bomb" de Pillow (warning, voire erreur selon la
+# version). On RELEVE la limite plutot que de la desactiver (None) : on garde
+# ainsi un garde-fou contre les vraies bombes (images de plusieurs Go), tout en
+# laissant passer nos images legitimes. Les images sont ensuite redimensionnees
+# a l'import (cf. add_attachment_file dans scripts/test_import_xls.py).
+# 250 Mpx ~= 750 Mo en RAM decompresse : large pour nos cas, fini pour bloquer
+# un fichier malveillant.
+PILImage.MAX_IMAGE_PIXELS = 250_000_000
 from odoo import models, fields, api,  _
 from odoo.exceptions import UserError
 import base64
