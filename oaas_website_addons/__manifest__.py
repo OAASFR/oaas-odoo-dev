@@ -16,7 +16,7 @@
     # Check https://github.com/odoo/odoo/blob/16.0/odoo/addons/base/data/ir_module_category_data.xml
     # for the full list
     'category': 'website',
-    'version': '0.1',
+    'version': '0.2',
     'installable': True,
     'application': True,
     'auto_install': False,
