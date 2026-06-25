@@ -1,30 +1,43 @@
 <odoo>
-  <!-- Bouton "Publier sur LinkedIn" en tête du formulaire d'article, +
-       affichage du statut LinkedIn. -->
+  <!-- Bouton "Publier sur LinkedIn" (smart button) + statut/erreur LinkedIn.
+       La vue parente (website_blog.view_blog_post_form) n'a pas de <header> :
+       on s'ancre sur le button_box et le groupe publishing_details. -->
   <record id="view_blog_post_form_linkedin" model="ir.ui.view">
     <field name="name">blog.post.form.linkedin</field>
     <field name="model">blog.post</field>
     <field name="inherit_id" ref="website_blog.view_blog_post_form"/>
     <field name="arch" type="xml">
-      <xpath expr="//header" position="inside">
+
+      <!-- Smart button dans la button box -->
+      <xpath expr="//div[@name='button_box']" position="inside">
         <button name="action_publish_to_linkedin" type="object"
-                string="Publier sur LinkedIn"
-                class="btn-secondary"
-                attrs="{'invisible': [('linkedin_post_urn', '!=', False)]}"/>
+                class="oe_stat_button" icon="fa-linkedin"
+                attrs="{'invisible': [('linkedin_post_urn', '!=', False)]}">
+          <div class="o_stat_info">
+            <span class="o_stat_text">Publier sur</span>
+            <span class="o_stat_text">LinkedIn</span>
+          </div>
+        </button>
         <button name="action_publish_to_linkedin" type="object"
-                string="Republier sur LinkedIn"
-                class="btn-secondary"
-                attrs="{'invisible': [('linkedin_state', '!=', 'error')]}"/>
-        <field name="linkedin_state" widget="statusbar"
-               statusbar_visible="not_published,published"/>
+                class="oe_stat_button" icon="fa-linkedin"
+                attrs="{'invisible': ['|', ('linkedin_post_urn', '=', False),
+                                      ('linkedin_state', '!=', 'error')]}">
+          <div class="o_stat_info">
+            <span class="o_stat_text">Republier</span>
+            <span class="o_stat_text">LinkedIn</span>
+          </div>
+        </button>
       </xpath>
-      <!-- Trace d'erreur visible sous le titre quand publication échouée. -->
-      <xpath expr="//sheet" position="before">
-        <div class="alert alert-danger" role="alert"
-             attrs="{'invisible': [('linkedin_state', '!=', 'error')]}">
-          <field name="linkedin_error" readonly="1" nolabel="1"/>
-        </div>
+
+      <!-- Statut + erreur dans les options de publication -->
+      <xpath expr="//group[@name='publishing_details']" position="inside">
+        <field name="linkedin_state"/>
+        <field name="linkedin_post_urn"
+               attrs="{'invisible': [('linkedin_post_urn', '=', False)]}"/>
+        <field name="linkedin_error" readonly="1"
+               attrs="{'invisible': [('linkedin_state', '!=', 'error')]}"/>
       </xpath>
+
     </field>
   </record>
 </odoo>

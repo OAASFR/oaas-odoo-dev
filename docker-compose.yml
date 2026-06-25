@@ -29,6 +29,7 @@ services:
       - ./odoo.conf:/etc/odoo/odoo.conf:ro
       - ./oaas_website_addons:/mnt/extra-addons/oaas_website_addons:ro
       - ./oaas_docusign_addons:/mnt/extra-addons/oaas_docusign_addons:ro
+      - ./oaas_linkedin_addons:/mnt/extra-addons/oaas_linkedin_addons:ro
     restart: unless-stopped
 
 volumes:

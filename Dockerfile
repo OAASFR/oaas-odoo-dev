@@ -5,7 +5,8 @@ FROM odoo:16.0
 USER root
 
 # Dépendances Python additionnelles (cf. external_dependencies des addons)
-RUN pip3 install --no-cache-dir openpyxl translate nltk pillow \
+# requests : appels à l'API LinkedIn (oaas_linkedin_addons)
+RUN pip3 install --no-cache-dir openpyxl translate nltk pillow requests \
     # Tokenizer NLTK requis par l'import de blog (sentence splitting)
     && python3 -c "import nltk; nltk.download('punkt', download_dir='/usr/share/nltk_data')" \
     && python3 -c "import nltk; nltk.download('punkt_tab', download_dir='/usr/share/nltk_data')" || true
