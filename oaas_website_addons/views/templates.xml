@@ -22,6 +22,33 @@
         <template id="my_slideshow_template" inherit_id="website.layout">
             <xpath expr="//head" position="inside">
                 <link rel="stylesheet" type="text/css" href="/oaas_website_addons/static/src/css/my_slideshow_template.css?v=tech-4x4-png-v2"/>
+                <!-- Découverte des fichiers llms.txt par les agents IA (standard
+                     émergent type="text/llms.txt"). Présent sur toutes les pages. -->
+                <link rel="alternate" type="text/llms.txt" title="llms.txt" href="/llms.txt"/>
+                <link rel="alternate" type="text/llms.txt" title="llms-full.txt" href="/llms-full.txt"/>
+            </xpath>
+        </template>
+
+        <!-- Référence les fichiers llms.txt dans robots.txt, comme le sitemap,
+             pour aider les crawlers IA à les découvrir. S'injecte dans la zone
+             "custom" du robots.txt standard d'Odoo. -->
+        <template id="robots_llms" inherit_id="website.robots">
+            <xpath expr="//t[@t-translation='off']" position="inside">
+<t t-translation="off">
+# AI / LLM resources
+LLMs: <t t-esc="url_root"/>llms.txt
+LLMs-full: <t t-esc="url_root"/>llms-full.txt
+</t>
+            </xpath>
+        </template>
+
+        <!-- Données structurées Schema.org BlogPosting injectées dans chaque
+             article. Aide Claude, ChatGPT, Gemini et Google SGE à comprendre
+             auteur / date / sujet de la page. -->
+        <template id="blog_post_jsonld" inherit_id="website_blog.blog_post_complete">
+            <xpath expr="//t[@t-call='website_blog.index']" position="inside">
+                <script type="application/ld+json"
+                        t-out="blog_post._oaas_blogposting_jsonld()"/>
             </xpath>
         </template>
 

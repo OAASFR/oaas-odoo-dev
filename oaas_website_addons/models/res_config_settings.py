@@ -20,16 +20,20 @@ class ResConfigSettings(models.TransientModel):
     # Lignes d'en-tête optionnelles ajoutées en haut des deux fichiers
     # (par ex. titre du site, description, contact). Utilisé en mode auto ET
     # manuel comme préambule.
-    oaas_llms_header = fields.Text(
+    # NB : res.config.settings n'accepte pas les champs Text liés à un
+    # config_parameter (default_get / _get_classified_fields refuse tout type
+    # autre que char/bool/int/float/selection/m2o/datetime). On utilise donc
+    # Char + widget="text" dans la vue pour conserver une saisie multi-ligne.
+    oaas_llms_header = fields.Char(
         string=_('En-tête llms.txt'),
         config_parameter='oaas_website_addons.llms_header',
     )
     # Contenu servi tel quel quand oaas_llms_mode == 'manual'.
-    oaas_llms_txt = fields.Text(
+    oaas_llms_txt = fields.Char(
         string=_('Contenu llms.txt'),
         config_parameter='oaas_website_addons.llms_txt',
     )
-    oaas_llms_full_txt = fields.Text(
+    oaas_llms_full_txt = fields.Char(
         string=_('Contenu llms-full.txt'),
         config_parameter='oaas_website_addons.llms_full_txt',
     )

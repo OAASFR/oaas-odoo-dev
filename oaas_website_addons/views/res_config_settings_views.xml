@@ -4,35 +4,91 @@
     <field name="model">res.config.settings</field>
     <field name="inherit_id" ref="website.res_config_settings_view_form"/>
     <field name="arch" type="xml">
-      <xpath expr="//block[@id='website_info_settings']" position="after">
-        <block title="Fichiers LLM (llms.txt)" id="oaas_llms_settings">
-          <setting string="Mode de génération"
-                   help="Auto : contenu généré depuis les articles de blog publiés. Manuel : contenu personnalisé servi tel quel.">
-            <field name="oaas_llms_mode" widget="radio"/>
-          </setting>
-          <setting string="En-tête"
-                   help="Préambule ajouté en haut de llms.txt et llms-full.txt (titre, description du site, contact…).">
-            <field name="oaas_llms_header" placeholder="> Description du site, contact, etc."/>
-          </setting>
-          <setting string="Contenu manuel"
-                   attrs="{'invisible': [('oaas_llms_mode', '!=', 'manual')]}">
-            <div class="content-group">
-              <button name="action_oaas_generate_llms" type="object"
-                      string="Pré-remplir depuis les articles" class="btn-link"
-                      icon="fa-refresh"/>
-              <label for="oaas_llms_txt" string="llms.txt" class="o_form_label mt8"/>
-              <field name="oaas_llms_txt" placeholder="Contenu servi sur /llms.txt"/>
-              <label for="oaas_llms_full_txt" string="llms-full.txt" class="o_form_label mt8"/>
-              <field name="oaas_llms_full_txt" placeholder="Contenu servi sur /llms-full.txt"/>
+      <!-- S'insère à la fin du bloc Website, juste après le conteneur
+           d'informations du site, en suivant la structure native des pages
+           Paramètres d'Odoo 16 (h2 + o_settings_container + o_setting_box). -->
+      <xpath expr="//div[@id='website_info_settings']" position="after">
+        <h2>Fichiers LLM (llms.txt)</h2>
+        <div class="row mt16 o_settings_container" id="oaas_llms_settings">
+
+          <!-- Mode de génération -->
+          <div class="col-12 col-lg-6 o_setting_box">
+            <div class="o_setting_right_pane">
+              <span class="o_form_label">Mode de génération</span>
+              <div class="text-muted">
+                Auto : contenu généré depuis les articles de blog publiés.
+                Manuel : contenu personnalisé servi tel quel.
+              </div>
+              <div class="content-group mt16">
+                <field name="oaas_llms_mode" widget="radio"/>
+              </div>
             </div>
-          </setting>
-          <setting string="Aperçu des URL servies">
-            <div>
-              <a href="/llms.txt" target="_blank">/llms.txt</a> ·
-              <a href="/llms-full.txt" target="_blank">/llms-full.txt</a>
+          </div>
+
+          <!-- En-tête -->
+          <div class="col-12 col-lg-6 o_setting_box">
+            <div class="o_setting_right_pane">
+              <label for="oaas_llms_header" string="En-tête" class="o_form_label"/>
+              <div class="text-muted">
+                Préambule ajouté en haut de llms.txt et llms-full.txt
+                (titre, description du site, contact…).
+              </div>
+              <div class="content-group mt16">
+                <field name="oaas_llms_header" widget="text"
+                       placeholder="> Description du site, contact, etc."/>
+              </div>
             </div>
-          </setting>
-        </block>
+          </div>
+
+          <!-- Aperçu des URL servies -->
+          <div class="col-12 col-lg-6 o_setting_box">
+            <div class="o_setting_right_pane">
+              <span class="o_form_label">Aperçu des URL servies</span>
+              <div class="text-muted">
+                Fichiers exposés à la racine du site pour les agents IA.
+              </div>
+              <div class="content-group mt16">
+                <a href="/llms.txt" target="_blank" role="button"
+                   class="btn btn-link ps-0">
+                  <i class="fa fa-external-link me-1"/>/llms.txt
+                </a>
+                <a href="/llms-full.txt" target="_blank" role="button"
+                   class="btn btn-link">
+                  <i class="fa fa-external-link me-1"/>/llms-full.txt
+                </a>
+              </div>
+            </div>
+          </div>
+
+          <!-- Contenu manuel (visible uniquement en mode manuel) -->
+          <div class="col-12 o_setting_box"
+               attrs="{'invisible': [('oaas_llms_mode', '!=', 'manual')]}">
+            <div class="o_setting_right_pane">
+              <span class="o_form_label">Contenu manuel</span>
+              <div class="text-muted">
+                Contenu servi tel quel sur les deux URL.
+              </div>
+              <div class="content-group mt16">
+                <button name="action_oaas_generate_llms" type="object"
+                        string="Pré-remplir depuis les articles"
+                        class="btn btn-link ps-0" icon="fa-refresh"/>
+                <div class="row mt8">
+                  <label for="oaas_llms_txt" string="llms.txt"
+                         class="col-lg-3 o_form_label"/>
+                  <field name="oaas_llms_txt" widget="text" class="col"
+                         placeholder="Contenu servi sur /llms.txt"/>
+                </div>
+                <div class="row mt8">
+                  <label for="oaas_llms_full_txt" string="llms-full.txt"
+                         class="col-lg-3 o_form_label"/>
+                  <field name="oaas_llms_full_txt" widget="text" class="col"
+                         placeholder="Contenu servi sur /llms-full.txt"/>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
       </xpath>
     </field>
   </record>
