@@ -1,0 +1,30 @@
+<odoo>
+  <!-- Bouton "Publier sur LinkedIn" en tête du formulaire d'article, +
+       affichage du statut LinkedIn. -->
+  <record id="view_blog_post_form_linkedin" model="ir.ui.view">
+    <field name="name">blog.post.form.linkedin</field>
+    <field name="model">blog.post</field>
+    <field name="inherit_id" ref="website_blog.view_blog_post_form"/>
+    <field name="arch" type="xml">
+      <xpath expr="//header" position="inside">
+        <button name="action_publish_to_linkedin" type="object"
+                string="Publier sur LinkedIn"
+                class="btn-secondary"
+                attrs="{'invisible': [('linkedin_post_urn', '!=', False)]}"/>
+        <button name="action_publish_to_linkedin" type="object"
+                string="Republier sur LinkedIn"
+                class="btn-secondary"
+                attrs="{'invisible': [('linkedin_state', '!=', 'error')]}"/>
+        <field name="linkedin_state" widget="statusbar"
+               statusbar_visible="not_published,published"/>
+      </xpath>
+      <!-- Trace d'erreur visible sous le titre quand publication échouée. -->
+      <xpath expr="//sheet" position="before">
+        <div class="alert alert-danger" role="alert"
+             attrs="{'invisible': [('linkedin_state', '!=', 'error')]}">
+          <field name="linkedin_error" readonly="1" nolabel="1"/>
+        </div>
+      </xpath>
+    </field>
+  </record>
+</odoo>

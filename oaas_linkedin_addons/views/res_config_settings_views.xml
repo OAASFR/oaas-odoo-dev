@@ -1,0 +1,76 @@
+<odoo>
+  <record id="res_config_settings_view_form_oaas_linkedin" model="ir.ui.view">
+    <field name="name">res.config.settings.view.form.oaas.linkedin</field>
+    <field name="model">res.config.settings</field>
+    <field name="inherit_id" ref="website.res_config_settings_view_form"/>
+    <field name="arch" type="xml">
+      <!-- S'insère dans le bloc Website, après les informations du site.
+           Si le module oaas_website_addons est présent, on pourrait viser
+           son bloc llms ; on vise ici le conteneur natif pour rester
+           autonome (pas de dépendance dure à oaas_website_addons). -->
+      <xpath expr="//div[@id='website_info_settings']" position="after">
+        <h2>LinkedIn</h2>
+        <div class="row mt16 o_settings_container" id="oaas_linkedin_settings">
+
+          <!-- Identifiants de l'app -->
+          <div class="col-12 col-lg-6 o_setting_box">
+            <div class="o_setting_right_pane">
+              <span class="o_form_label">Identifiants de l'application</span>
+              <div class="text-muted">
+                Renseignés depuis le portail développeur LinkedIn
+                (Community Management API).
+              </div>
+              <div class="content-group mt16">
+                <div class="row mt8">
+                  <label for="oaas_linkedin_client_id" string="Client ID"
+                         class="col-lg-4 o_form_label"/>
+                  <field name="oaas_linkedin_client_id" class="col"/>
+                </div>
+                <div class="row mt8">
+                  <label for="oaas_linkedin_client_secret" string="Client Secret"
+                         class="col-lg-4 o_form_label"/>
+                  <field name="oaas_linkedin_client_secret" password="True"
+                         class="col"/>
+                </div>
+                <div class="row mt8">
+                  <label for="oaas_linkedin_org_urn" string="Organization URN"
+                         class="col-lg-4 o_form_label"/>
+                  <field name="oaas_linkedin_org_urn" class="col"
+                         placeholder="urn:li:organization:123456"/>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Connexion OAuth + état -->
+          <div class="col-12 col-lg-6 o_setting_box">
+            <div class="o_setting_right_pane">
+              <span class="o_form_label">Connexion</span>
+              <div class="text-muted">
+                Autorisez l'application à publier sur la page entreprise.
+                Le jeton est rafraîchi automatiquement.
+              </div>
+              <div class="content-group mt16">
+                <field name="oaas_linkedin_connected" invisible="1"/>
+                <div attrs="{'invisible': [('oaas_linkedin_connected', '=', True)]}">
+                  <span class="text-warning">
+                    <i class="fa fa-circle me-1"/>Non connecté
+                  </span>
+                </div>
+                <div attrs="{'invisible': [('oaas_linkedin_connected', '=', False)]}">
+                  <span class="text-success">
+                    <i class="fa fa-check-circle me-1"/>Connecté
+                  </span>
+                </div>
+                <button name="action_oaas_linkedin_connect" type="object"
+                        string="Connecter LinkedIn" icon="fa-linkedin"
+                        class="btn btn-link ps-0 mt8"/>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </xpath>
+    </field>
+  </record>
+</odoo>
