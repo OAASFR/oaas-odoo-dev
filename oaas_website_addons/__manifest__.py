@@ -38,10 +38,8 @@
         # 'demo/demo.xml',
     ],
     'external_dependencies': {
-        'python': ['openpyxl','translate','nltk']
+        'python': ['openpyxl']
     },
-    # import nltk
-    #   >>> nltk.download('punkt')
     # 'pre_init_hook': '_oaas_website_addons_pre_init',
     # 'post_init_hook': '_oaas_website_addons_post_init',
     # 'uninstall_hook': '_oaas_website_addons_uninstall_hook',

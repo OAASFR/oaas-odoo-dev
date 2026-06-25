@@ -20,7 +20,6 @@ from odoo.exceptions import UserError
 import base64
 import csv
 from ..scripts.test_import_xls import convert_row_to_blog_post
-from translate import Translator
 
 # class oaas_website_addons(models.Model):
 #     _name = 'oaas_website_addons.oaas_website_addons'
@@ -56,16 +55,18 @@ class BlogPostImport(models.TransientModel):
             images = sheet._images
             print(f"Nombre d'images trouvées : {len(images)}")
             i = 0
-            translator = Translator(to_lang="fr")
             to_import = False
             for row in sheet.iter_rows():
-                to_import = eval(row[23].value)
+                to_import = eval(row[33].value)
                 if i > 0 and to_import:
-                    blog, blog_fr = convert_row_to_blog_post(sheet,row, i, translator, self)
+                    blog, blog_fr = convert_row_to_blog_post(sheet,row, i, self)
                     blog_post = self.env['blog.post'].with_context(lang='en_US').create(blog)
                     blog_post.with_context(lang='fr_FR').write({
                         'name': blog_fr['name'],
-                        'subtitle': blog_fr['subtitle']
+                        'subtitle': blog_fr['subtitle'],
+                        'website_meta_title': blog_fr['website_meta_title'],
+                        'website_meta_description': blog_fr['website_meta_description'],
+                        'website_meta_keywords': blog_fr['website_meta_keywords'],
                     })
                     content = {
                         "en_US": blog['content'],

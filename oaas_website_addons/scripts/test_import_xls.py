@@ -1,13 +1,11 @@
 import base64
 import datetime
 import html
-from nltk import tokenize
 
 import odoo
 import json
 import openpyxl
 from PIL import Image as PILImage
-from translate import Translator
 from odoo.http import request
 from odoo.tools import json
 
@@ -53,31 +51,11 @@ def add_attachment_file(file, record, i, col_start):
 	attachment_id = attachments.sudo().create({
 		'name': str(record.id) + "_" + str(i) + "_" + str(col_start) + "." + file.format,
 		'datas': file_data_base64,
-		'res_model': 'blog.post.import',
-		'res_id': record.id,
+		'res_model': 'blog.post',
+		'res_id': 0,
 		'public': True
 	})
 	return attachment_id
-
-
-def _safe_translate(text, translator):
-	# Traduit une chaine, mais ne leve JAMAIS : en cas d'echec (quota 429,
-	# reseau, "two distinct languages", message d'erreur renvoye en clair...),
-	# on retombe sur le texte original. Garantit que l'import n'echoue pas a
-	# cause du service de traduction.
-	if not isinstance(text, str) or not text.strip():
-		return text if isinstance(text, str) else ''
-	try:
-		t = translator.translate(text)
-	except Exception:
-		return text
-	if not t:
-		return text
-	# MyMemory renvoie parfois l'erreur dans le corps de la reponse.
-	tu = t.upper()
-	if 'PLEASE SELECT' in tu or 'TOO MANY REQUESTS' in tu or 'MYMEMORY WARNING' in tu:
-		return text
-	return t
 
 
 def _split_heading(text):
@@ -136,43 +114,6 @@ def _space_paragraphs(html_text):
 	return html_text
 
 
-def _translate_text(text, translator):
-	# Traduit un fragment de texte (sans balise) phrase par phrase, de facon
-	# robuste : si une phrase echoue, on garde l'original au lieu de tout perdre.
-	if not text or not text.strip():
-		return text
-	# sent_tokenize retire les espaces entre phrases ; on conserve les espaces
-	# de bord du fragment et on recolle les phrases avec une espace pour eviter
-	# le bug "mot.Mot" (deux phrases collees apres traduction).
-	lead = text[:len(text) - len(text.lstrip())]
-	trail = text[len(text.rstrip()):]
-	try:
-		sentences = tokenize.sent_tokenize(text)
-	except Exception:
-		sentences = [text]
-	translated = [_safe_translate(s, translator) for s in sentences]
-	return lead + ' '.join(part.strip() for part in translated) + trail
-
-
-def parse_and_translate(str_to_translate, translator):
-	# Le contenu des cellules est du HTML : on NE traduit QUE le texte situe
-	# hors des balises, en preservant les balises intactes (<p>, <ol>, <li>,
-	# <h4>...). Sinon la tokenisation/traduction casse la structure HTML
-	# (listes disparues, sections tronquees).
-	import re
-	if not isinstance(str_to_translate, str) or not str_to_translate:
-		return ''
-	# Decoupe en alternant : balises (<...>) et texte entre balises.
-	parts = re.split(r'(<[^>]+>)', str_to_translate)
-	out = ''
-	for part in parts:
-		if part.startswith('<') and part.endswith('>'):
-			out += part            # balise : inchangee
-		else:
-			out += _translate_text(part, translator)
-	return out
-
-
 def parse_str(str_or_null):
 	str_result = ''
 	try:
@@ -188,7 +129,7 @@ def parse_str(str_or_null):
 	return str_result
 
 
-def convert_row_to_blog_post(sheet,row, i, translator, record=None):
+def convert_row_to_blog_post(sheet,row, i, record=None):
 	blog_post = {}
 	blog_post_fr = {}
 	if record:
@@ -199,69 +140,39 @@ def convert_row_to_blog_post(sheet,row, i, translator, record=None):
 		# la langue de l'utilisateur.
 		env_en = record.env(context=dict(record.env.context, lang='en_US'))
 		blog = env_en['blog.blog'].sudo().search([('name', '=', row[0].value)], limit=1)
-		website = env_en['website'].sudo().search([('name', '=', row[4].value)], limit=1)
-		author = env_en['res.users'].sudo().search([('email', '=', row[5].value)], limit=1)
+		website = env_en['website'].sudo().search([('name', '=', row[5].value)], limit=1)
+		author = env_en['res.users'].sudo().search([('email', '=', row[6].value)], limit=1)
 		if not blog:
 			raise ValueError("Blog introuvable (col 0) : %r" % (row[0].value,))
 		if not website:
-			raise ValueError("Website introuvable (col 4) : %r" % (row[4].value,))
+			raise ValueError("Website introuvable (col 5) : %r" % (row[5].value,))
 		if not author:
-			raise ValueError("Auteur introuvable (col 5) : %r" % (row[5].value,))
+			raise ValueError("Auteur introuvable (col 6) : %r" % (row[6].value,))
 		blog_post['blog_id'] = blog.id
 		blog_post['website_id'] = website.id
 		blog_post['author_id'] = author.partner_id.id
 
-	blog_post['website_meta_title'] = row[7].value
-	blog_post['website_meta_keywords'] = row[9].value
-	blog_post['website_meta_description'] = row[8].value
-	blog_post['is_published'] = eval(row[10].value)
-	blog_post['active'] = eval(row[11].value)
-	blog_post['post_date'] = datetime.datetime.strptime(row[6].value, '%d/%m/%Y %H:%M:%S')
+	# Champs SEO (traduisibles dans Odoo) : version EN sur le post cree en en_US,
+	# version FR ecrite ensuite dans le contexte fr_FR (cf. models.py).
+	blog_post['website_meta_title'] = row[8].value
+	blog_post['website_meta_description'] = row[10].value
+	blog_post['website_meta_keywords'] = row[12].value
+	blog_post['is_published'] = eval(row[14].value)
+	blog_post['active'] = eval(row[15].value)
+	blog_post['post_date'] = datetime.datetime.strptime(row[7].value, '%d/%m/%Y %H:%M:%S')
 
 	blog_post['name'] = row[1].value
-	blog_post['subtitle'] = row[2].value
-	# Traduction protegee : si le service echoue (quota 429, reseau, meme
-	# langue...), on garde le texte original au lieu de faire echouer l'import.
-	blog_post_fr['name'] = _safe_translate(row[1].value, translator)
-	blog_post_fr['subtitle'] = _safe_translate(row[2].value, translator)
+	blog_post['subtitle'] = row[3].value
+	# Versions francaises : lues directement dans les colonnes FR dediees du
+	# fichier. Plus d'API de traduction : si la cellule FR est vide, le champ FR
+	# reste vide. col 2 = name, 4 = subtitle, 9/11/13 = meta title/desc/keywords.
+	blog_post_fr['name'] = parse_str(row[2].value)
+	blog_post_fr['subtitle'] = parse_str(row[4].value)
+	blog_post_fr['website_meta_title'] = parse_str(row[9].value)
+	blog_post_fr['website_meta_description'] = parse_str(row[11].value)
+	blog_post_fr['website_meta_keywords'] = parse_str(row[13].value)
 	# Titre du post : sert de texte alt par defaut pour les images (SEO/a11y).
 	post_title = parse_str(row[1].value)
-	# print(json.dumps(blog_post['subtitle']))
-
-	# blog_post['name'] = "{'en_US':'" + row[1].value + "', 'fr_FR':'" + translator.translate(row[1].value) + "'}"
-	# print(blog_post['name'])
-
-	# subtitle = {}
-	# subtitle["en_US"] = row[1].value
-	# subtitle["fr_FR"] = translator.translate(row[2].value)
-	# blog_post['subtitle'] = subtitle
-	# print(json.dumps(blog_post['subtitle']))
-	#
-	# why = {}
-	# why["en_US"] =
-	# why["fr_FR"] = translator.translate(row[12].value)
-	# print(json.dumps(why))
-	#
-	# how = {}
-	# how["en_US"] = row[13].value
-	# how["fr_FR"] = translator.translate(row[13].value)
-	# print(json.dumps(how))
-	#
-	# what = {}
-	# what["en_US"] =
-	# what["fr_FR"] = translator.translate(row[14].value)
-	# print(json.dumps(what))
-	#
-	# conclusion = {}
-	# conclusion["en_US"] =
-	# conclusion["fr_FR"] = translator.translate(row[15].value)
-	# print(json.dumps(conclusion))
-	#
-	# content = {}
-	# content["en_US"] = why["en_US"] + how["en_US"] + what["en_US"] + conclusion["en_US"]
-	# content["fr_FR"] = why["fr_FR"] + how["fr_FR"] + what["fr_FR"] + conclusion["fr_FR"]
-	# blog_post['content'] = content
-	# print(json.dumps(blog_post['content']))
 	why_img = None
 	how_img = None
 	what_img = None
@@ -272,30 +183,30 @@ def convert_row_to_blog_post(sheet,row, i, translator, record=None):
 			anchor = img.anchor
 			try:
 				row_start, col_start = anchor._from.row, anchor._from.col
-				if row_start == i and col_start == 16:
+				if row_start == i and col_start == 24:
 					if record:
 						attach_id = add_attachment_file(img, record, i, col_start)
 						blog_post['cover_properties'] = '{"background-image": "url(' + attach_id.local_url + ')", "background_color_class": "o_cc3 o_cc", "background_color_style": "", "opacity": "0.2","resize_class": "o_half_screen_height o_record_has_cover", "text_align_class": ""}'
 					#img.show()
-				if row_start == i and col_start == 17:
+				if row_start == i and col_start == 25:
 					if record:
 						attach_id = add_attachment_file(img, record, i, col_start)
 						why_img = attach_id
 					#img = PILImage.open(img.ref)
 					#img.show()
-				if row_start == i and col_start == 18:
+				if row_start == i and col_start == 26:
 					if record:
 						attach_id = add_attachment_file(img, record, i, col_start)
 						how_img = attach_id
 					#img = PILImage.open(img.ref)
 					#img.show()
-				if row_start == i and col_start == 19:
+				if row_start == i and col_start == 27:
 					if record:
 						attach_id = add_attachment_file(img, record, i, col_start)
 						what_img = attach_id
 					#img = PILImage.open(img.ref)
 					#img.show()
-				if row_start == i and col_start == 20:
+				if row_start == i and col_start == 28:
 					if record:
 						attach_id = add_attachment_file(img, record, i, col_start)
 						conclusion_img = attach_id
@@ -375,15 +286,26 @@ def convert_row_to_blog_post(sheet,row, i, translator, record=None):
 		if not img:
 			return ""
 		alt_attr = html.escape(alt or post_title or '', quote=True)
-		image_style = 'max-height:100px;width:auto;object-fit:contain;' if compact else ''
+		# Mode compact (images why/how/what) : bandeau de 100px de haut sur toute
+		# la largeur, image rognee/centree (object-fit cover + position center)
+		# pour remplir la zone sans deformation. On RETIRE 'img-fluid' (qui force
+		# height:auto !important et bride la largeur) et on passe les dimensions
+		# en !important pour battre les regles residuelles du theme.
+		if compact:
+			img_classes = 'mx-auto d-block o_we_custom_image'
+			image_style = ('height:100px !important;width:100% !important;'
+				'object-fit:cover;object-position:center;')
+		else:
+			img_classes = 'figure-img img-fluid mx-auto d-block o_we_custom_image'
+			image_style = ''
 		return (
 			'<section class="s_picture o_colored_level pt0 pb16" '
 			'data-snippet="s_picture" data-name="Image" style="">\n'
 			' <div class="container">\n'
 			'  <div class="row s_nb_column_fixed">\n'
 			'   <div class="col-12 o_colored_level" style="text-align: center;">\n'
-			'    <figure class="figure m-0">\n'
-			'     <img src="' + img.local_url + '" class="figure-img img-fluid mx-auto d-block o_we_custom_image" '
+			'    <figure class="figure m-0 w-100">\n'
+			'     <img src="' + img.local_url + '" class="' + img_classes + '" '
 			'alt="' + alt_attr + '" loading="lazy" data-original-src="' + img.local_url + '" data-mimetype="image/png" '
 			'style="' + image_style + '">\n'
 			'    </figure>\n'
@@ -393,19 +315,14 @@ def convert_row_to_blog_post(sheet,row, i, translator, record=None):
 			'</section>\n'
 		)
 
-	def _advantages(html_block, translate=False):
-		# Section optionnelle provenant integralement de la colonne 22 :
-		# le premier <h3> est le titre, suivi du HTML de l'accordeon.
-		# Ainsi aucun texte visible n'est code en dur dans l'importeur.
+	def _advantages(html_block):
+		# Section optionnelle : le premier <h3> est le titre, suivi du HTML de
+		# l'accordeon. Le HTML (EN ou FR) provient directement de la colonne Excel
+		# correspondante. Ainsi aucun texte visible n'est code en dur dans l'importeur.
 		raw = parse_str(html_block)
 		if not raw.strip():
 			return ""
 		title, block = _split_heading(raw)
-		if translate:
-			# L'Excel contient toujours la version anglaise. Pour le post FR,
-			# seules les chaînes visibles de l'accordéon sont traduites.
-			# Le titre "Your benefits" reste identique dans les deux langues.
-			block = parse_and_translate(block, translator)
 		# Rend les IDs uniques par post : le HTML colle depuis le builder a des
 		# IDs figes (myCollapse...). Si plusieurs articles avec accordeon sont
 		# sur la meme page (liste de blog), les IDs entrent en collision. On
@@ -428,21 +345,17 @@ def convert_row_to_blog_post(sheet,row, i, translator, record=None):
 			'</section>\n'
 		)
 
-	# Accordeon optionnel, pilote par l'Excel (col 22 = HTML brut).
-	advantages_html = row[22].value if len(row) > 22 else None
-	advantages_str = _advantages(advantages_html)
-	advantages_str_fr = _advantages(advantages_html, translate=True)
+	# Accordeon optionnel, pilote par l'Excel (col 31 = HTML EN, col 32 = HTML FR).
+	advantages_str = _advantages(row[31].value if len(row) > 31 else None)
+	advantages_str_fr = _advantages(row[32].value if len(row) > 32 else None)
 
 	# Pour chaque section : le marqueur rouge est fixe (Pourquoi/Comment/Quoi),
 	# le GRAND TITRE BLEU est l'accroche extraite du debut de la cellule Excel
-	# (1er <h3>), traduite comme le reste. Le mot "Pourquoi/Comment" redondant
-	# n'existe plus. _build_section() assemble header(marqueur+accroche) + corps.
-	def _build_section(marker, cell_value, translate=False):
+	# (1er <h3>). La valeur de cellule passee (EN ou FR) determine la langue.
+	# _build_section() assemble header(marqueur+accroche) + corps.
+	def _build_section(marker, cell_value):
 		raw = parse_str(cell_value)
 		heading, rest = _split_heading(raw)
-		if translate:
-			heading = _safe_translate(heading, translator)
-			rest = parse_and_translate(rest, translator)
 		# Si pas d'accroche en tete de cellule, on retombe sur le marqueur.
 		title = heading or marker
 		return _section_header(marker, title) + _section_body(rest)
@@ -485,38 +398,37 @@ def convert_row_to_blog_post(sheet,row, i, translator, record=None):
 	conclusion_str_fr = conclusion_pic + _cta(
 		'Parlons-en',
 		'Vous voulez un projet comme celui-ci ?',
-		'Parlez-nous de votre projet - transformons vos besoins en solution concrete et fiable.',
+		'Parlez-nous de votre projet - transformons vos besoins en solution concrète et fiable.',
 		'Contactez-nous',
 	)
 
-	# Resume / intro (col 21), rendu en tete d'article.
-	summary_value = row[21].value if len(row) > 21 else None
-	summary_str = _summary(summary_value)
-	summary_str_fr = _summary(parse_and_translate(summary_value, translator))
+	# Resume / intro : col 29 (EN), col 30 (FR), rendu en tete d'article.
+	summary_str = _summary(row[29].value if len(row) > 29 else None)
+	summary_str_fr = _summary(row[30].value if len(row) > 30 else None)
 
 	# Assemble: summary (intro), puis chaque section = header(marqueur+accroche)
-	# + corps + image. L'accordeon "Your benefits" est dans la section Pourquoi,
-	# sous l'image why (cf. maquette).
+	# + corps + image. Pour Why, l'image est placee AU-DESSUS de la section
+	# (avant le titre rouge) ; l'accordeon "Your benefits" suit la section Why.
+	# EN : Why/How/What/Conclusion = col 16/18/20/22. FR : col 17/19/21/23.
 	blog_post['content'] = (
 		summary_str +
-		_build_section('Why ?', row[12].value) + why_pic + advantages_str +
-		_build_section('How ?', row[13].value) + how_pic +
-		_build_section('What ?', row[14].value) + what_pic +
-		_build_section('Conclusion', row[15].value) + conclusion_str
+		why_pic + _build_section('Why ?', row[16].value) + advantages_str +
+		_build_section('How ?', row[18].value) + how_pic +
+		_build_section('What ?', row[20].value) + what_pic +
+		_build_section('Conclusion', row[22].value) + conclusion_str
 	)
 
 	blog_post_fr['content'] = (
 		summary_str_fr +
-		_build_section('Pourquoi ?', row[12].value, translate=True) + why_pic + advantages_str_fr +
-		_build_section('Comment ?', row[13].value, translate=True) + how_pic +
-		_build_section('Quoi ?', row[14].value, translate=True) + what_pic +
-		_build_section('Conclusion', row[15].value, translate=True) + conclusion_str_fr
+		why_pic + _build_section('Pourquoi ?', row[17].value) + advantages_str_fr +
+		_build_section('Comment ?', row[19].value) + how_pic +
+		_build_section('Quoi ?', row[21].value) + what_pic +
+		_build_section('Conclusion', row[23].value) + conclusion_str_fr
 	)
 	return blog_post, blog_post_fr
 
 
 if __name__ == '__main__':
-	translator = Translator(to_lang="fr")
 	connection = None
 	try:
 		connection = odoo.sql_db.db_connect(to=URI, allow_uri=True)
@@ -536,7 +448,7 @@ if __name__ == '__main__':
 		i = 0
 		for row in sheet.iter_rows():
 			if i > 0:
-				blog, blog_fr = convert_row_to_blog_post(sheet,row, i, translator)
+				blog, blog_fr = convert_row_to_blog_post(sheet,row, i)
 			i = i + 1
 
 	except Exception as e:
