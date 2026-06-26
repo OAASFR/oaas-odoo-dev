@@ -19,6 +19,12 @@ class ResConfigSettings(models.TransientModel):
         string=_('Organization URN'),
         config_parameter='oaas_linkedin.org_urn')
 
+    # Mode de test : appel API réel mais lifecycleState=DRAFT (post créé sur
+    # la page mais non diffusé dans le feed).
+    oaas_linkedin_draft = fields.Boolean(
+        string=_('Publier en brouillon (non diffusé)'),
+        config_parameter='oaas_linkedin.draft')
+
     # Champ calculé d'affichage de l'état de connexion (non stocké).
     oaas_linkedin_connected = fields.Boolean(
         string=_('LinkedIn connecté'),

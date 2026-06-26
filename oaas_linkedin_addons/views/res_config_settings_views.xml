@@ -69,6 +69,20 @@
             </div>
           </div>
 
+          <!-- Mode de test : brouillon -->
+          <div class="col-12 col-lg-6 o_setting_box">
+            <div class="o_setting_left_pane">
+              <field name="oaas_linkedin_draft"/>
+            </div>
+            <div class="o_setting_right_pane">
+              <label for="oaas_linkedin_draft" string="Publier en brouillon"/>
+              <div class="text-muted">
+                Appel API réel mais post créé en brouillon (non diffusé sur le
+                feed). À utiliser pour tester sans publier publiquement.
+              </div>
+            </div>
+          </div>
+
         </div>
       </xpath>
     </field>

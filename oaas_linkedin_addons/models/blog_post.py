@@ -122,9 +122,13 @@ class BlogPost(models.Model):
                 _logger.warning("LinkedIn publish failed for blog.post %s: %s",
                                 post.id, e)
 
+        client = self.env['oaas.linkedin.client']
+        mode = _(" [BROUILLON — posts non diffusés sur le feed]") \
+            if client._draft_enabled() else ''
+
         msg = _("%(pub)s publié(s), %(skip)s ignoré(s) (déjà publié), "
-                "%(err)s en erreur.") % {
-            'pub': published, 'skip': skipped, 'err': errors}
+                "%(err)s en erreur.%(mode)s") % {
+            'pub': published, 'skip': skipped, 'err': errors, 'mode': mode}
         return {
             'type': 'ir.actions.client',
             'tag': 'display_notification',

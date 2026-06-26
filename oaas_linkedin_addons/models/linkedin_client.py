@@ -177,6 +177,9 @@ class LinkedInClient(models.AbstractModel):
                 "Paramètres → Site Web (format urn:li:organization:123456)."))
         return org_urn
 
+    def _draft_enabled(self):
+        return self._get_param('draft') in ('True', 'true', '1', True)
+
     def upload_image(self, token, image_bytes):
         """Upload binaire en deux temps, retourne l'URN de l'image.
 
@@ -227,7 +230,7 @@ class LinkedInClient(models.AbstractModel):
                 'targetEntities': [],
                 'thirdPartyDistributionChannels': [],
             },
-            'lifecycleState': 'PUBLISHED',
+            'lifecycleState': 'DRAFT' if self._draft_enabled() else 'PUBLISHED',
             'isReshareDisabledByAuthor': False,
         }
 
