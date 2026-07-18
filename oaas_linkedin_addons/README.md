@@ -10,7 +10,8 @@ Module Odoo 16.0 pour O.A.A.S. (oaas.fr).
   - bouton (smart button) sur le formulaire de l'article,
   - entrée dans le menu **Action ⚙️** des vues liste et formulaire (publication multiple).
 - Contenu publié : **résumé généré par IA** (accroche + points clés + appel à l'action + hashtags, à partir du titre/sous-titre/contenu de l'article) suivi du **lien** vers l'article, et **image de couverture** uploadée comme média (repli sur une carte article si l'article n'a pas de couverture).
-- **Idempotence** : un article déjà publié (porteur d'un `linkedin_post_urn`) n'est jamais republié. Un bouton « Republier » apparaît uniquement après une erreur.
+- **Idempotence sur la première publication** : un article déjà publié (porteur d'un `linkedin_post_urn`) n'est jamais republié automatiquement par `action_publish_to_linkedin()` (bouton initial et publication groupée depuis la liste).
+- **Republication volontaire** : le bouton « Republier » (visible dès qu'un `linkedin_post_urn` existe, quel que soit le statut) crée un **nouveau post LinkedIn distinct** — l'API ne permet pas de modifier un post existant via ce module, l'ancien post reste donc en ligne, inchangé. Une confirmation est demandée avant l'action (mono-article, pas de republication groupée).
 - Colonne **« Publié sur LinkedIn »** dans la liste des articles de blog (statut `linkedin_state`).
 - Configuration (LinkedIn + IA) et connexion OAuth dans **Paramètres → Site Web → LinkedIn**.
 
@@ -187,7 +188,7 @@ rafraîchi automatiquement avant expiration.
 | `models/linkedin_client.py` | `AbstractModel` `oaas.linkedin.client` : OAuth (autorisation, échange de code, refresh), upload d'image en deux temps, création du post (`POST /rest/posts`). Centralise les accès `ir.config_parameter` en `sudo()`. |
 | `models/ai_summarizer.py` | `AbstractModel` `oaas.linkedin.ai_summarizer` : appelle l'endpoint compatible API OpenAI et retourne le texte du post (accroche + puces + CTA + hashtags), sans URL. |
 | `models/res_config_settings.py` | Champs de config LinkedIn (Client ID/Secret/Org URN) + IA (URL/modèle/token) + bouton de connexion. |
-| `models/blog_post.py` | Hérite `blog.post` : champs `linkedin_post_urn` / `linkedin_state` / `linkedin_error`, `_linkedin_commentary()` (résumé IA + lien), méthode `action_publish_to_linkedin()` (idempotente, agrège un résumé). |
+| `models/blog_post.py` | Hérite `blog.post` : champs `linkedin_post_urn` / `linkedin_state` / `linkedin_error`, `_linkedin_commentary()` (résumé IA + lien), `action_publish_to_linkedin()` (idempotente, agrège un résumé, bulk-compatible) et `action_republish_to_linkedin()` (mono-article, ignore l'idempotence, crée un nouveau post). |
 | `controllers/linkedin_oauth.py` | Routes `/linkedin/oauth/connect` et `/linkedin/oauth/callback` (state anti-CSRF). |
 | `data/ir_actions_server.xml` | Action serveur liée à `blog.post` (menu Action ⚙️). |
 | `views/res_config_settings_views.xml` | Blocs LinkedIn + Résumé IA dans les paramètres du site. |

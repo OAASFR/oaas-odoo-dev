@@ -18,10 +18,10 @@
             <span class="o_stat_text">LinkedIn</span>
           </div>
         </button>
-        <button name="action_publish_to_linkedin" type="object"
+        <button name="action_republish_to_linkedin" type="object"
                 class="oe_stat_button" icon="fa-linkedin"
-                attrs="{'invisible': ['|', ('linkedin_post_urn', '=', False),
-                                      ('linkedin_state', '!=', 'error')]}">
+                confirm="Un NOUVEAU post sera créé sur LinkedIn (l'ancien reste en ligne, inchangé). Continuer ?"
+                attrs="{'invisible': [('linkedin_post_urn', '=', False)]}">
           <div class="o_stat_info">
             <span class="o_stat_text">Republier</span>
             <span class="o_stat_text">LinkedIn</span>
