@@ -109,6 +109,79 @@
           </div>
 
         </div>
+
+        <h3>Résumé IA (LinkedIn)</h3>
+        <div class="row mt16 o_settings_container" id="oaas_linkedin_ai_settings">
+          <div class="col-12 col-lg-6 o_setting_box">
+            <div class="o_setting_right_pane">
+              <span class="o_form_label">Génération du texte du post</span>
+              <div class="text-muted">
+                Endpoint compatible API OpenAI (ex. Ollama). Le résumé est
+                généré à partir du titre, du sous-titre et du contenu de
+                l'article ; le lien vers l'article est toujours ajouté
+                automatiquement après coup, jamais généré par le modèle.
+              </div>
+              <div class="content-group mt16">
+                <div class="row mt8">
+                  <label for="oaas_linkedin_ai_base_url" string="URL de base"
+                         class="col-lg-4 o_form_label"/>
+                  <field name="oaas_linkedin_ai_base_url" class="col"
+                         placeholder="https://ollama.validation.oaas.fr/v1"/>
+                </div>
+                <div class="row mt8">
+                  <label for="oaas_linkedin_ai_model" string="Modèle"
+                         class="col-lg-4 o_form_label"/>
+                  <field name="oaas_linkedin_ai_model" class="col"
+                         placeholder="qwen3:4b"/>
+                </div>
+                <div class="row mt8">
+                  <label for="oaas_linkedin_ai_api_key" string="Bearer token"
+                         class="col-lg-4 o_form_label"/>
+                  <field name="oaas_linkedin_ai_api_key" password="True"
+                         class="col" placeholder="Laisser vide si non requis"/>
+                </div>
+                <div class="row mt8">
+                  <button name="action_oaas_linkedin_list_ai_models" type="object"
+                          string="Lister les modèles disponibles"
+                          class="btn btn-link ps-0"/>
+                  <button name="action_oaas_linkedin_test_ai_connection" type="object"
+                          string="Tester la connexion"
+                          class="btn btn-link ps-0"/>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="col-12 col-lg-6 o_setting_box">
+            <div class="o_setting_right_pane">
+              <span class="o_form_label">Paramètres de génération</span>
+              <div class="text-muted">
+                Réglages de l'appel au modèle. Valeurs vides = repli sur les
+                valeurs par défaut du module.
+              </div>
+              <div class="content-group mt16">
+                <div class="row mt8">
+                  <label for="oaas_linkedin_ai_temperature" string="Température"
+                         class="col-lg-4 o_form_label"/>
+                  <field name="oaas_linkedin_ai_temperature" class="col"
+                         placeholder="0.7"/>
+                </div>
+                <div class="row mt8">
+                  <label for="oaas_linkedin_ai_max_tokens" string="Tokens maximum"
+                         class="col-lg-4 o_form_label"/>
+                  <field name="oaas_linkedin_ai_max_tokens" class="col"
+                         placeholder="700"/>
+                </div>
+                <div class="row mt8">
+                  <label for="oaas_linkedin_ai_timeout" string="Délai d'attente (s)"
+                         class="col-lg-4 o_form_label"/>
+                  <field name="oaas_linkedin_ai_timeout" class="col"
+                         placeholder="60"/>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
       </xpath>
     </field>
   </record>

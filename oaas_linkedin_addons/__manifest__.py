@@ -29,6 +29,7 @@
         'data/ir_actions_server.xml',
         'views/res_config_settings_views.xml',
         'views/blog_post_views.xml',
+        'views/blog_post_list_views.xml',
     ],
     'external_dependencies': {
         'python': ['requests'],

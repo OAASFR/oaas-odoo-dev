@@ -1,0 +1,18 @@
+<odoo>
+  <!-- Colonne "Publié sur LinkedIn" sur la liste des articles de blog.
+       L'héritage se résout par nom (search=) plutôt que par ref= : cette
+       vue liste (blog.post.view.list) n'est pas définie par website_blog
+       dans le code source standard, probablement une vue custom côté
+       instance ; on évite ainsi de dépendre d'un xmlid/module incertain. -->
+  <record id="view_blog_post_list_linkedin" model="ir.ui.view">
+    <field name="name">blog.post.list.linkedin</field>
+    <field name="model">blog.post</field>
+    <field name="inherit_id"
+           search="[('model','=','blog.post'),('name','=','blog.post.view.list')]"/>
+    <field name="arch" type="xml">
+      <xpath expr="//tree" position="inside">
+        <field name="linkedin_state" string="Publié sur LinkedIn" optional="show"/>
+      </xpath>
+    </field>
+  </record>
+</odoo>

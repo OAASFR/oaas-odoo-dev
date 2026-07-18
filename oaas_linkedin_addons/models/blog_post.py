@@ -6,6 +6,7 @@ import re
 
 from odoo import models, fields, api, _
 from odoo.exceptions import UserError
+from odoo.tools import html2plaintext
 
 _logger = logging.getLogger(__name__)
 
@@ -29,17 +30,24 @@ class BlogPost(models.Model):
         string='Dernière erreur LinkedIn', readonly=True, copy=False)
 
     def _linkedin_commentary(self):
-        """Construit le texte du post : titre + sous-titre + lien."""
+        """Construit le texte du post : résumé généré par IA + lien.
+
+        Le lien n'est jamais généré par le modèle (risque d'hallucination
+        d'URL) : il est ajouté ici, après coup, comme précédemment.
+        """
         self.ensure_one()
-        parts = [self.name or '']
-        if self.subtitle:
-            parts.append(self.subtitle)
+        summarizer = self.env['oaas.linkedin.ai_summarizer']
+        plain_text = html2plaintext(self.content or '')
+        commentary = summarizer.generate_commentary(
+            title=self.name, subtitle=self.subtitle, plain_text=plain_text,
+            lang=self.env.context.get('lang') or self.env.user.lang)
+
         base_url = self.env['ir.config_parameter'].sudo().get_param(
             'web.base.url')
         url = '%s%s' % (base_url, self.website_url) if self.website_url else ''
         if url:
-            parts.append(url)
-        return '\n\n'.join(p for p in parts if p)
+            commentary = '%s\n\n%s' % (commentary, url)
+        return commentary
 
     def _linkedin_cover_bytes(self):
         """Retourne le binaire de l'image de couverture, ou None.

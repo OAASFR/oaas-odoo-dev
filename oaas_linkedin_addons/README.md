@@ -9,9 +9,10 @@ Module Odoo 16.0 pour O.A.A.S. (oaas.fr).
 - Action **« Publier sur LinkedIn »** sur les articles de blog :
   - bouton (smart button) sur le formulaire de l'article,
   - entrée dans le menu **Action ⚙️** des vues liste et formulaire (publication multiple).
-- Contenu publié : **titre + sous-titre + lien** vers l'article, et **image de couverture** uploadée comme média (repli sur une carte article si l'article n'a pas de couverture).
+- Contenu publié : **résumé généré par IA** (accroche + points clés + appel à l'action + hashtags, à partir du titre/sous-titre/contenu de l'article) suivi du **lien** vers l'article, et **image de couverture** uploadée comme média (repli sur une carte article si l'article n'a pas de couverture).
 - **Idempotence** : un article déjà publié (porteur d'un `linkedin_post_urn`) n'est jamais republié. Un bouton « Republier » apparaît uniquement après une erreur.
-- Configuration et connexion OAuth dans **Paramètres → Site Web → LinkedIn**.
+- Colonne **« Publié sur LinkedIn »** dans la liste des articles de blog (statut `linkedin_state`).
+- Configuration (LinkedIn + IA) et connexion OAuth dans **Paramètres → Site Web → LinkedIn**.
 
 > ⚠️ Il n'y a **pas** de publication automatique : rien n'est posté tant qu'un utilisateur ne déclenche pas l'action.
 
@@ -135,6 +136,28 @@ Le champ vide retombe sur `DEFAULT_LINKEDIN_API_VERSION` codée dans
 `models/linkedin_client.py`, à rafraîchir occasionnellement lors d'une
 montée de version du module.
 
+### Résumé IA (génération du texte du post)
+
+**Paramètres → Site Web → LinkedIn → section « Résumé IA (LinkedIn) »** :
+
+| Champ | Description |
+|---|---|
+| URL de base | Endpoint compatible API OpenAI (`POST {url}/chat/completions`), ex. `https://ollama.validation.oaas.fr/v1` pour un serveur Ollama. Vide = repli sur `DEFAULT_AI_BASE_URL`. |
+| Modèle | Nom du modèle exposé par l'endpoint, ex. `qwen3:4b`. Vide = repli sur `DEFAULT_AI_MODEL`. |
+| Bearer token | Optionnel — à renseigner uniquement si l'endpoint exige une authentification (Ollama en local n'en demande pas). |
+| **Lister les modèles disponibles** (bouton) | Sonde `GET {url}/models` avec les valeurs actuellement dans le formulaire (même non enregistrées) et affiche les modèles trouvés — utile pour éviter une faute de frappe sur le nom du modèle. |
+| **Tester la connexion** (bouton) | Même sondage, plus vérification que le modèle configuré fait bien partie de la liste renvoyée. |
+| Température | Créativité du texte généré (0 = déterministe). Vide = repli sur `0.7`. |
+| Tokens maximum | Longueur max. de la réponse générée, pour éviter une génération incontrôlée. Vide = repli sur `700`. |
+| Délai d'attente (s) | Timeout de l'appel de génération. Vide = repli sur `60`. |
+
+Le modèle reçoit uniquement le titre, le sous-titre et le contenu texte de
+l'article (HTML converti en texte brut) ; il ne génère **jamais** l'URL de
+l'article, ajoutée automatiquement par le module après coup, pour éviter
+toute hallucination de lien. En cas d'échec de l'appel IA (endpoint injoignable,
+réponse vide), la publication échoue avec une erreur explicite — **aucun
+repli silencieux** vers un texte dégradé.
+
 Le **jeton d'accès** (et son refresh) est obtenu par OAuth, stocké en
 `ir.config_parameter` (clés `oaas_linkedin.access_token` /
 `refresh_token` / `token_expiry`) et **jamais exposé** dans l'interface. Il est
@@ -153,12 +176,14 @@ rafraîchi automatiquement avant expiration.
 | Fichier | Rôle |
 |---|---|
 | `models/linkedin_client.py` | `AbstractModel` `oaas.linkedin.client` : OAuth (autorisation, échange de code, refresh), upload d'image en deux temps, création du post (`POST /rest/posts`). Centralise les accès `ir.config_parameter` en `sudo()`. |
-| `models/res_config_settings.py` | Champs de config (Client ID/Secret/Org URN) + bouton de connexion. |
-| `models/blog_post.py` | Hérite `blog.post` : champs `linkedin_post_urn` / `linkedin_state` / `linkedin_error`, méthode `action_publish_to_linkedin()` (idempotente, agrège un résumé). |
+| `models/ai_summarizer.py` | `AbstractModel` `oaas.linkedin.ai_summarizer` : appelle l'endpoint compatible API OpenAI et retourne le texte du post (accroche + puces + CTA + hashtags), sans URL. |
+| `models/res_config_settings.py` | Champs de config LinkedIn (Client ID/Secret/Org URN) + IA (URL/modèle/token) + bouton de connexion. |
+| `models/blog_post.py` | Hérite `blog.post` : champs `linkedin_post_urn` / `linkedin_state` / `linkedin_error`, `_linkedin_commentary()` (résumé IA + lien), méthode `action_publish_to_linkedin()` (idempotente, agrège un résumé). |
 | `controllers/linkedin_oauth.py` | Routes `/linkedin/oauth/connect` et `/linkedin/oauth/callback` (state anti-CSRF). |
 | `data/ir_actions_server.xml` | Action serveur liée à `blog.post` (menu Action ⚙️). |
-| `views/res_config_settings_views.xml` | Bloc LinkedIn dans les paramètres du site. |
+| `views/res_config_settings_views.xml` | Blocs LinkedIn + Résumé IA dans les paramètres du site. |
 | `views/blog_post_views.xml` | Smart button + statut sur le formulaire d'article. |
+| `views/blog_post_list_views.xml` | Colonne « Publié sur LinkedIn » (`linkedin_state`) sur la liste des articles, héritée par résolution de nom (vue liste custom côté instance). |
 
 La version de l'API LinkedIn se configure dans **Paramètres → Site Web →
 LinkedIn → Version API** (repli sur `DEFAULT_LINKEDIN_API_VERSION` dans
