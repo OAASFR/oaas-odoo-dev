@@ -38,7 +38,10 @@ class TestLinkedInAiSummarizer(TransactionCase):
         self.assertEqual(called_url, 'https://ollama.example.test/v1/chat/completions')
         payload = mock_post.call_args.kwargs['json']
         self.assertEqual(payload['model'], 'qwen3:4b')
-        self.assertIn('Titre', payload['messages'][1]['content'])
+        # messages = [system, few-shot user, few-shot assistant, vraie requête]
+        self.assertEqual(payload['messages'][0]['role'], 'system')
+        self.assertEqual(len(payload['messages']), 4)
+        self.assertIn('Titre', payload['messages'][-1]['content'])
 
     @patch('odoo.addons.oaas_linkedin_addons.models.ai_summarizer.requests.post')
     def test_generate_commentary_uses_default_endpoint_when_unset(self, mock_post):

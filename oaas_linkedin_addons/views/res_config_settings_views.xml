@@ -132,7 +132,7 @@
                   <label for="oaas_linkedin_ai_model" string="Modèle"
                          class="col-lg-4 o_form_label"/>
                   <field name="oaas_linkedin_ai_model" class="col"
-                         placeholder="qwen3:4b"/>
+                         placeholder="qwen2.5-coder:3b"/>
                 </div>
                 <div class="row mt8">
                   <label for="oaas_linkedin_ai_api_key" string="Bearer token"

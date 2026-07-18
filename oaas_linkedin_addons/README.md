@@ -143,11 +143,11 @@ montée de version du module.
 | Champ | Description |
 |---|---|
 | URL de base | Endpoint compatible API OpenAI (`POST {url}/chat/completions`), ex. `https://ollama.validation.oaas.fr/v1` pour un serveur Ollama. Vide = repli sur `DEFAULT_AI_BASE_URL`. |
-| Modèle | Nom du modèle exposé par l'endpoint, ex. `qwen3:4b`. Vide = repli sur `DEFAULT_AI_MODEL`. |
+| Modèle | Nom du modèle exposé par l'endpoint, ex. `qwen2.5-coder:3b`. Vide = repli sur `DEFAULT_AI_MODEL`. ⚠️ Éviter les modèles Qwen3 (`qwen3:4b`, `qwen3:14b`) : ils tournent en mode « réflexion » sur ce serveur, et ni `reasoning_effort=none` ni `/no_think` ne le désactivent — le raisonnement consomme tout le budget de tokens sans jamais produire de texte final (testé jusqu'à 3000 tokens / 11 min en streaming). |
 | Bearer token | Optionnel — à renseigner uniquement si l'endpoint exige une authentification (Ollama en local n'en demande pas). |
 | **Lister les modèles disponibles** (bouton) | Sonde `GET {url}/models` avec les valeurs actuellement dans le formulaire (même non enregistrées) et affiche les modèles trouvés — utile pour éviter une faute de frappe sur le nom du modèle. |
 | **Tester la connexion** (bouton) | Même sondage, plus vérification que le modèle configuré fait bien partie de la liste renvoyée. |
-| Température | Créativité du texte généré (0 = déterministe). Vide = repli sur `0.7`. |
+| Température | Créativité du texte généré (0 = déterministe). Vide = repli sur `0.0` — un petit modèle comme `qwen2.5-coder:3b` s'écarte plus facilement du contenu source à température élevée (hallucinations constatées à 0.7). |
 | Tokens maximum | Longueur max. de la réponse générée, pour éviter une génération incontrôlée. Vide = repli sur `700`. |
 | Délai d'attente (s) | Timeout de l'appel de génération. Vide = repli sur `60`. |
 
@@ -157,6 +157,15 @@ l'article, ajoutée automatiquement par le module après coup, pour éviter
 toute hallucination de lien. En cas d'échec de l'appel IA (endpoint injoignable,
 réponse vide), la publication échoue avec une erreur explicite — **aucun
 repli silencieux** vers un texte dégradé.
+
+Le prompt inclut un **exemple few-shot** (entrée/sortie fictives, sans rapport
+avec du contenu client réel) : sur un petit modèle comme `qwen2.5-coder:3b`,
+ça réduit nettement les hallucinations et le non-respect du format observés
+avec une simple description textuelle des consignes. Le résultat reste un
+**brouillon** à relire avant publication (le module ne publie jamais sans
+action explicite de l'utilisateur — voir *Fonctionnalités*) : un modèle de
+cette taille ne respecte pas toujours parfaitement la longueur ou le nombre
+de puces visés.
 
 Le **jeton d'accès** (et son refresh) est obtenu par OAuth, stocké en
 `ir.config_parameter` (clés `oaas_linkedin.access_token` /

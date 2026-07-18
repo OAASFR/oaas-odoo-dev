@@ -19,9 +19,17 @@ _logger = logging.getLogger(__name__)
 
 # Valeurs de repli si Paramètres → Site Web → LinkedIn → « Résumé IA » est
 # vide (endpoint Ollama de validation, modèle léger suffisant pour un résumé).
+# qwen2.5-coder:3b et non un modèle qwen3 : les modèles qwen3 de ce serveur
+# tournent en mode "réflexion" (thinking) et ni reasoning_effort=none ni
+# /no_think ne le désactivent sur cette version d'Ollama — le raisonnement
+# consomme tout le budget de tokens sans jamais produire de réponse finale
+# (testé jusqu'à 3000 tokens / 11 min en streaming, toujours tronqué).
 DEFAULT_AI_BASE_URL = 'https://ollama.validation.oaas.fr/v1'
-DEFAULT_AI_MODEL = 'qwen3:4b'
-DEFAULT_AI_TEMPERATURE = 0.7
+DEFAULT_AI_MODEL = 'qwen2.5-coder:3b'
+# 0.0 (déterministe) : un petit modèle comme qwen2.5-coder:3b s'écarte plus
+# facilement du contenu source et des consignes de format à température
+# élevée (testé : hallucinations hors-sujet à 0.7). Repli conservateur.
+DEFAULT_AI_TEMPERATURE = 0.0
 DEFAULT_AI_MAX_TOKENS = 700
 DEFAULT_AI_TIMEOUT = 60
 
@@ -43,9 +51,49 @@ SYSTEM_PROMPT = (
     "automatiquement après ton texte.\n"
     "4. Une dernière ligne avec 3 à 5 hashtags pertinents.\n"
     "Longueur totale visée : 1300 à 1900 caractères. Ton direct, expert, "
-    "jamais commercial ni ronflant. N'utilise pas de formules d'introduction "
-    "comme « Voici » ou « Découvrez ». Ne mentionne jamais que tu es une IA. "
-    "Réponds uniquement avec le texte du post, sans balises ni commentaire."
+    "jamais commercial ni ronflant. N'utilise JAMAIS les mots « Voici » ou "
+    "« Découvrez », même en début de section. Ne mentionne jamais que tu es "
+    "une IA. N'ajoute AUCUN label ou intitulé avant une section (interdits : "
+    "« Accroche : », « Accroche percutante : », « Appel à l'action : », "
+    "« Hashtags : » ou équivalent) : seulement le texte brut du post, "
+    "prêt à être publié tel quel. Réponds uniquement avec ce texte, sans "
+    "balises ni commentaire."
+)
+
+# Exemple few-shot (entrée/sortie fictives, sans rapport avec le contenu réel
+# du client) : les petits modèles suivent nettement mieux le format et
+# restent sur le sujet de l'article quand un exemple concret accompagne les
+# instructions plutôt qu'une simple description textuelle du format.
+FEW_SHOT_USER = (
+    "Titre : Sauvegardes chiffrées : le contrôle qui évite le pire\n"
+    "Sous-titre : Ce qui distingue une sauvegarde qui protège vraiment "
+    "d'une sauvegarde qui rassure à tort\n\n"
+    "Contenu de l'article :\n"
+    "Beaucoup d'entreprises sauvegardent leurs données sans jamais tester "
+    "la restauration. Résultat : la sauvegarde existe, mais personne ne "
+    "sait si elle fonctionne réellement le jour où il le faut.\n\n"
+    "Trois pratiques changent la donne : chiffrer les sauvegardes au repos "
+    "et en transit, les stocker sur un site distinct de la production, et "
+    "tester une restauration complète au moins une fois par trimestre. "
+    "Sans ce test régulier, une sauvegarde corrompue ou incomplète n'est "
+    "détectée qu'au pire moment.\n\n"
+    "Mettre en place ces trois pratiques ne demande ni gros budget ni "
+    "refonte d'infrastructure : surtout une procédure claire et un "
+    "responsable identifié pour l'exécuter."
+)
+FEW_SHOT_ASSISTANT = (
+    "90% des sauvegardes ne sont jamais testées. Le jour où elles servent, "
+    "il est trop tard pour le découvrir.\n\n"
+    "- Une sauvegarde non restaurée n'est qu'une hypothèse, pas une "
+    "protection\n"
+    "- Le chiffrement au repos et en transit ferme une faille souvent "
+    "ignorée\n"
+    "- Un site de stockage distinct de la production évite la perte totale\n"
+    "- Un test de restauration trimestriel révèle les corruptions avant "
+    "qu'elles coûtent cher\n\n"
+    "L'article détaille la procédure à mettre en place, sans budget "
+    "supplémentaire ni refonte d'infrastructure.\n\n"
+    "#Cybersécurité #SauvegardeDonnées #ContinuitéActivité #InfrastructureIT"
 )
 
 # Certains modèles (dont Qwen3) peuvent renvoyer un bloc de raisonnement
@@ -124,11 +172,19 @@ class LinkedInAiSummarizer(models.AbstractModel):
             'messages': [
                 {'role': 'system',
                  'content': SYSTEM_PROMPT.format(lang=lang_label)},
+                {'role': 'user', 'content': FEW_SHOT_USER},
+                {'role': 'assistant', 'content': FEW_SHOT_ASSISTANT},
                 {'role': 'user', 'content': user_content},
             ],
             'temperature': self._temperature(),
             'max_tokens': self._max_tokens(),
             'stream': False,
+            # Sans ça, les modèles "thinking" (dont Qwen3) peuvent épuiser
+            # max_tokens entièrement dans le raisonnement interne (champ
+            # "reasoning" de la réponse) et renvoyer un content vide avec
+            # finish_reason=length. Cette tâche est un résumé simple, aucun
+            # besoin de chaîne de raisonnement.
+            'reasoning_effort': 'none',
         }
         try:
             resp = requests.post(
