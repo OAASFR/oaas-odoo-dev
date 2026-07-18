@@ -23,8 +23,12 @@ from odoo.exceptions import UserError
 _logger = logging.getLogger(__name__)
 
 # Version de l'API LinkedIn (header LinkedIn-Version, format AAAAMM).
-# https://learn.microsoft.com/en-us/linkedin/marketing/versioning
-LINKEDIN_API_VERSION = '202405'
+# LinkedIn publie une nouvelle version chaque mois et ne garde chaque version
+# active qu'environ 12 mois (cf. NONEXISTENT_VERSION une fois la fenêtre
+# dépassée) : https://learn.microsoft.com/en-us/linkedin/marketing/versioning
+# Valeur de repli si Paramètres → Site Web → LinkedIn → « Version API » est
+# vide ; à rafraîchir ici lors d'une montée de version majeure du module.
+DEFAULT_LINKEDIN_API_VERSION = '202607'
 
 AUTH_URL = 'https://www.linkedin.com/oauth/v2/authorization'
 TOKEN_URL = 'https://www.linkedin.com/oauth/v2/accessToken'
@@ -161,10 +165,13 @@ class LinkedInClient(models.AbstractModel):
     # ------------------------------------------------------------------
     # Appels API métier
     # ------------------------------------------------------------------
+    def _api_version(self):
+        return self._get_param('api_version') or DEFAULT_LINKEDIN_API_VERSION
+
     def _headers(self, token):
         return {
             'Authorization': 'Bearer %s' % token,
-            'LinkedIn-Version': LINKEDIN_API_VERSION,
+            'LinkedIn-Version': self._api_version(),
             'X-Restli-Protocol-Version': '2.0.0',
             'Content-Type': 'application/json',
         }

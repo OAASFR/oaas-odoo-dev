@@ -83,6 +83,31 @@
             </div>
           </div>
 
+          <!-- Version de l'API LinkedIn -->
+          <div class="col-12 col-lg-6 o_setting_box">
+            <div class="o_setting_right_pane">
+              <span class="o_form_label">Version API</span>
+              <div class="text-muted">
+                Format AAAAMM (ex. 202607). Laisser vide pour utiliser la
+                valeur par défaut du module. LinkedIn ne garde chaque version
+                active qu'environ 12 mois : en cas d'erreur
+                <code>NONEXISTENT_VERSION</code> à la publication, relever la
+                version courante sur
+                <a href="https://learn.microsoft.com/en-us/linkedin/marketing/versioning"
+                   target="_blank">learn.microsoft.com/.../marketing/versioning</a>
+                et la saisir ici.
+              </div>
+              <div class="content-group mt16">
+                <div class="row mt8">
+                  <label for="oaas_linkedin_api_version" string="Version"
+                         class="col-lg-4 o_form_label"/>
+                  <field name="oaas_linkedin_api_version" class="col"
+                         placeholder="202607"/>
+                </div>
+              </div>
+            </div>
+          </div>
+
         </div>
       </xpath>
     </field>

@@ -115,7 +115,25 @@ ci-dessus) :
 | Client Secret | Client Secret de l'app (étape 5) |
 | Organization URN | `urn:li:organization:<id>` de la page (étape 5) |
 | Publier en brouillon (non diffusé) | Crée le post en `DRAFT` (présent sur la page mais non diffusé) — pour tester sans publier réellement |
+| Version API | Header `LinkedIn-Version` (format `AAAAMM`, ex. `202607`). Vide = valeur de repli du module. Voir *Versionnage de l'API* ci-dessous. |
 | Bouton « Connecter LinkedIn » | Lance le flux OAuth, stocke le jeton |
+
+### Versionnage de l'API (maintenance récurrente)
+
+LinkedIn publie une nouvelle version d'API chaque mois et ne garde chaque
+version active qu'**environ 12 mois** ; passé ce délai, tout appel échoue
+avec `426 Upgrade Required` / `NONEXISTENT_VERSION`. Si une publication
+échoue avec cette erreur :
+
+1. Relever la version courante sur
+   [learn.microsoft.com/.../marketing/versioning](https://learn.microsoft.com/en-us/linkedin/marketing/versioning)
+   (format `AAAAMM`).
+2. La saisir dans **Paramètres → Site Web → LinkedIn → Version API** — effet
+   immédiat, pas de redéploiement nécessaire.
+
+Le champ vide retombe sur `DEFAULT_LINKEDIN_API_VERSION` codée dans
+`models/linkedin_client.py`, à rafraîchir occasionnellement lors d'une
+montée de version du module.
 
 Le **jeton d'accès** (et son refresh) est obtenu par OAuth, stocké en
 `ir.config_parameter` (clés `oaas_linkedin.access_token` /
@@ -142,9 +160,9 @@ rafraîchi automatiquement avant expiration.
 | `views/res_config_settings_views.xml` | Bloc LinkedIn dans les paramètres du site. |
 | `views/blog_post_views.xml` | Smart button + statut sur le formulaire d'article. |
 
-La version de l'API LinkedIn est figée dans `LINKEDIN_API_VERSION`
-(`models/linkedin_client.py`) — à mettre à jour si l'API renvoie une erreur de
-version.
+La version de l'API LinkedIn se configure dans **Paramètres → Site Web →
+LinkedIn → Version API** (repli sur `DEFAULT_LINKEDIN_API_VERSION` dans
+`models/linkedin_client.py` si vide) — voir *Versionnage de l'API* plus haut.
 
 ## Dépendances
 

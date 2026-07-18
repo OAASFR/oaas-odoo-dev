@@ -25,6 +25,15 @@ class ResConfigSettings(models.TransientModel):
         string=_('Publier en brouillon (non diffusé)'),
         config_parameter='oaas_linkedin.draft')
 
+    # Version de l'API LinkedIn (header LinkedIn-Version, format AAAAMM).
+    # LinkedIn ne garde chaque version active qu'~12 mois : si les
+    # publications échouent avec NONEXISTENT_VERSION, relever la version
+    # courante sur https://learn.microsoft.com/en-us/linkedin/marketing/versioning
+    # et la saisir ici (vide = valeur de repli codée dans le module).
+    oaas_linkedin_api_version = fields.Char(
+        string=_('Version API'),
+        config_parameter='oaas_linkedin.api_version')
+
     # Champ calculé d'affichage de l'état de connexion (non stocké).
     oaas_linkedin_connected = fields.Boolean(
         string=_('LinkedIn connecté'),
