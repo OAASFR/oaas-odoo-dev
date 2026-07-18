@@ -158,41 +158,38 @@ class BlogPost(models.Model):
 
         Contrairement à action_publish_to_linkedin, ignore un
         linkedin_post_urn déjà présent : crée un NOUVEAU post sur LinkedIn
-        (l'API ne permet pas de modifier un post existant via ce module) et
-        remplace l'URN stocké par celui du nouveau post. L'ancien post reste
-        visible tel quel sur LinkedIn — il n'est ni modifié ni supprimé.
-        Action mono-enregistrement (pas de republication groupée) pour éviter
-        toute republication en masse accidentelle.
+        pour chaque article sélectionné (l'API ne permet pas de modifier un
+        post existant via ce module) et remplace l'URN stocké par celui du
+        nouveau post. L'ancien post reste visible tel quel sur LinkedIn — il
+        n'est ni modifié ni supprimé. Accessible depuis le smart button du
+        formulaire (mono-article) et depuis le menu Action ⚙️ de la liste
+        (sélection multiple), d'où l'agrégation façon
+        action_publish_to_linkedin.
         """
-        self.ensure_one()
-        try:
-            self._publish_one_to_linkedin()
-        except UserError as e:
-            self.write({'linkedin_state': 'error', 'linkedin_error': str(e)})
-            _logger.warning("LinkedIn republish failed for blog.post %s: %s",
-                            self.id, e)
-            return {
-                'type': 'ir.actions.client',
-                'tag': 'display_notification',
-                'params': {
-                    'title': _('Republication LinkedIn'),
-                    'message': str(e),
-                    'type': 'danger',
-                    'sticky': True,
-                },
-            }
+        republished, errors = 0, 0
+        for post in self:
+            try:
+                post._publish_one_to_linkedin()
+                republished += 1
+            except UserError as e:
+                errors += 1
+                post.write({'linkedin_state': 'error', 'linkedin_error': str(e)})
+                _logger.warning(
+                    "LinkedIn republish failed for blog.post %s: %s",
+                    post.id, e)
 
         client = self.env['oaas.linkedin.client']
-        mode = _(" [BROUILLON — post non diffusé sur le feed]") \
+        mode = _(" [BROUILLON — posts non diffusés sur le feed]") \
             if client._draft_enabled() else ''
+        msg = _("%(pub)s republié(s), %(err)s en erreur.%(mode)s") % {
+            'pub': republished, 'err': errors, 'mode': mode}
         return {
             'type': 'ir.actions.client',
             'tag': 'display_notification',
             'params': {
                 'title': _('Republication LinkedIn'),
-                'message': _("Nouveau post créé sur LinkedIn.%(mode)s") % {
-                    'mode': mode},
-                'type': 'success',
-                'sticky': False,
+                'message': msg,
+                'type': 'danger' if errors else 'success',
+                'sticky': bool(errors),
             },
         }

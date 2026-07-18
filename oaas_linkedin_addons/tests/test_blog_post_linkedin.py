@@ -72,12 +72,37 @@ class TestBlogPostLinkedInCommentary(TransactionCase):
         self.assertEqual(self.post.linkedin_error, 'boom')
         self.assertEqual(result['params']['type'], 'danger')
 
-    def test_republish_requires_single_record(self):
+    @patch('odoo.addons.oaas_linkedin_addons.models.blog_post.BlogPost.'
+           '_publish_one_to_linkedin')
+    def test_republish_aggregates_across_multiple_records(self, mock_publish):
+        # Republiable depuis le menu Action ⚙️ de la liste (sélection
+        # multiple) : un article réussit, l'autre échoue.
         blog = self.env['blog.blog'].create({'name': 'Test Blog 2'})
         other_post = self.env['blog.post'].create({
-            'name': 'Autre article', 'blog_id': blog.id,
+            'name': 'Autre article',
+            'blog_id': blog.id,
+            'linkedin_post_urn': 'urn:li:share:222',
+            'linkedin_state': 'published',
         })
-        posts = self.post + other_post
 
-        with self.assertRaises(ValueError):
-            posts.action_republish_to_linkedin()
+        def side_effect(post):
+            if post.id == other_post.id:
+                raise UserError("boom")
+            post.write({
+                'linkedin_post_urn': 'urn:li:share:999',
+                'linkedin_state': 'published',
+            })
+        mock_publish.side_effect = side_effect
+        self.post.write({
+            'linkedin_post_urn': 'urn:li:share:111',
+            'linkedin_state': 'published',
+        })
+
+        result = (self.post + other_post).action_republish_to_linkedin()
+
+        self.assertEqual(mock_publish.call_count, 2)
+        self.assertEqual(self.post.linkedin_post_urn, 'urn:li:share:999')
+        self.assertEqual(other_post.linkedin_state, 'error')
+        self.assertIn('1 republié', result['params']['message'])
+        self.assertIn('1 en erreur', result['params']['message'])
+        self.assertEqual(result['params']['type'], 'danger')
