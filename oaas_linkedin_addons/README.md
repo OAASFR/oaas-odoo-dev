@@ -183,7 +183,7 @@ rafraîchi automatiquement avant expiration.
 | `data/ir_actions_server.xml` | Action serveur liée à `blog.post` (menu Action ⚙️). |
 | `views/res_config_settings_views.xml` | Blocs LinkedIn + Résumé IA dans les paramètres du site. |
 | `views/blog_post_views.xml` | Smart button + statut sur le formulaire d'article. |
-| `views/blog_post_list_views.xml` | Colonne « Publié sur LinkedIn » (`linkedin_state`) sur la liste des articles, héritée de `website_blog.blog_post_view_list`. |
+| `views/blog_post_list_views.xml` | Colonne « Publié sur LinkedIn » (`linkedin_state`) sur la liste des articles, héritée de `website_blog.view_blog_post_list`. |
 
 La version de l'API LinkedIn se configure dans **Paramètres → Site Web →
 LinkedIn → Version API** (repli sur `DEFAULT_LINKEDIN_API_VERSION` dans

@@ -1,10 +1,11 @@
 <odoo>
   <!-- Colonne "Publié sur LinkedIn" sur la liste des articles de blog
-       (vue website_blog.blog_post_view_list, confirmée en base). -->
+       (vue website_blog.view_blog_post_list "Blog Post Pages Tree",
+       confirmée par requête SQL directe en base). -->
   <record id="view_blog_post_list_linkedin" model="ir.ui.view">
     <field name="name">blog.post.list.linkedin</field>
     <field name="model">blog.post</field>
-    <field name="inherit_id" ref="website_blog.blog_post_view_list"/>
+    <field name="inherit_id" ref="website_blog.view_blog_post_list"/>
     <field name="arch" type="xml">
       <xpath expr="//tree" position="inside">
         <field name="linkedin_state" string="Publié sur LinkedIn" optional="show"/>
