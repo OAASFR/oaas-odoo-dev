@@ -1,0 +1,25 @@
+<odoo>
+  <!-- Action serveur attachée à blog.post : apparaît dans le menu Action ⚙️
+       des vues liste/formulaire. Publie les enregistrements sélectionnés. -->
+  <record id="action_blog_post_publish_linkedin" model="ir.actions.server">
+    <field name="name">Publier sur LinkedIn</field>
+    <field name="model_id" ref="website_blog.model_blog_post"/>
+    <field name="binding_model_id" ref="website_blog.model_blog_post"/>
+    <field name="binding_view_types">list,form</field>
+    <field name="state">code</field>
+    <field name="code">action = records.action_publish_to_linkedin()</field>
+  </record>
+
+  <!-- Republication volontaire, hors idempotence : crée un nouveau post pour
+       chaque article sélectionné, y compris ceux déjà publiés. Pas de
+       confirmation native ici (contrairement au smart button du formulaire,
+       ir.actions.server n'a pas d'équivalent à l'attribut confirm= des vues). -->
+  <record id="action_blog_post_republish_linkedin" model="ir.actions.server">
+    <field name="name">Republier sur LinkedIn</field>
+    <field name="model_id" ref="website_blog.model_blog_post"/>
+    <field name="binding_model_id" ref="website_blog.model_blog_post"/>
+    <field name="binding_view_types">list,form</field>
+    <field name="state">code</field>
+    <field name="code">action = records.action_republish_to_linkedin()</field>
+  </record>
+</odoo>

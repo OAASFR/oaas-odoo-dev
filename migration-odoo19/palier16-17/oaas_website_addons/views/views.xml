@@ -1,0 +1,65 @@
+<odoo>
+  <data>
+    <!-- explicit list view definition -->
+    <record model="ir.ui.view" id="view_blog_post_import_list">
+      <field name="name">blog.post.import.list</field>
+      <field name="model">blog.post.import</field>
+      <field name="arch" type="xml">
+        <tree>
+          <field name="file"/>
+          <field name="filename"/>
+          <field name="description"/>
+          <field name="when"/>
+        </tree>
+      </field>
+    </record>
+
+    <record model="ir.ui.view" id="view_blog_post_import_form" >
+            <field name="name">blog.post.import.form</field>
+            <field name="model">blog.post.import</field>
+            <field name="arch" type="xml">
+                <form string="Import Tags">
+                    <group>
+                        <field name="file" filename="filename"/>
+                        <field name="description"/>
+                        <button name="import_data" string="Import" type="object" class="btn-primary"/>
+                    </group>
+                </form>
+            </field>
+        </record>
+
+    <!-- actions opening views on models -->
+    <record model="ir.actions.act_window" id="blog_post_import_action_windows">
+      <field name="name">blog_post_import window</field>
+      <field name="res_model">blog.post.import</field>
+      <field name="view_mode">tree,form</field>
+    </record>
+
+    <!-- server action to the one above -->
+    <record model="ir.actions.server" id="blog_post_import_action_server">
+      <field name="name">blog_post_import server</field>
+      <field name="model_id" ref="model_blog_post_import"/>
+      <field name="state">code</field>
+      <field name="code">
+        action = {
+          "type": "ir.actions.act_window",
+          "view_mode": "tree,form",
+          "res_model": model._name,
+        }
+      </field>
+    </record>
+
+    <!-- Top menu item -->
+    <menuitem name="oaas_website_addons" id="oaas_website_addons.menu_root"/>
+    <!-- menu categories -->
+    <menuitem name="BlogPostImport" id="oaas_website_addons.blogpostimport" parent="oaas_website_addons.menu_root"/>
+    <!----><menuitem name="Menu 2" id="oaas_website_addons.menu_2" parent="oaas_website_addons.menu_root"/>
+    <!-- actions -->
+    <menuitem name="List" id="oaas_website_addons.menu_1_list" parent="oaas_website_addons.blogpostimport"
+              action="blog_post_import_action_windows"/>
+    <!--
+    <menuitem name="Server to list" id="oaas_website_addons" parent="oaas_website_addons.menu_2"
+              action="oaas_website_addons.action_server"/>
+-->
+  </data>
+</odoo>
