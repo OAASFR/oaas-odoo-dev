@@ -26,6 +26,15 @@ procédure de restauration testée, à exécuter systématiquement avant toute
 opération de migration ou de déploiement — même hors du cadre de cette
 migration Odoo 19.
 
+**État** : script préparé dans [`scripts/backup_restore.sh`](scripts/backup_restore.sh)
+(`backup`/`restore`, `pg_dump -F custom` + archive filestore, confirmation
+explicite requise avant tout `restore` destructif, aucun secret en dur —
+mot de passe PostgreSQL lu via `.pgpass`/`PGPASSWORD`). **Non testé** : pas
+d'environnement Odoo/PostgreSQL disponible sur cette VM pour valider un
+cycle backup→restore réel. Le chemin `ODOO_FILESTORE` par défaut est
+indicatif — à vérifier contre la valeur réelle de `data_dir` sur le serveur
+cible avant le premier usage.
+
 ## Secrets en clair
 
 Le mot de passe PostgreSQL généré par `deploy.sh` est en clair dans le

@@ -40,3 +40,11 @@ directement sur ce serveur.
 - [`03-risques-infra.md`](03-risques-infra.md) — risques d'infrastructure
   à traiter avant de pouvoir migrer sereinement (absence de staging, de
   backup, secrets en clair).
+- [`palier16-17/`](palier16-17/) — code préparé (fixes `attrs=`, squelettes
+  de migration) pour le palier 16.0 → 17.0.
+- [`palier17-18/`](palier17-18/) — code préparé (`<tree>`→`<list>`,
+  `werkzeug`→`markupsafe`) pour le palier 17.0 → 18.0, part du code déjà
+  préparé dans `palier16-17/`.
+- [`scripts/backup_restore.sh`](scripts/backup_restore.sh) — script de
+  sauvegarde/restauration DB + filestore, prérequis avant toute opération
+  de migration (non encore testé, voir `03-risques-infra.md`).
