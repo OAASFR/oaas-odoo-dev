@@ -363,6 +363,63 @@ else
     echo "Aucun email fourni à l'étape de config — certificat SSL sauté (vhost HTTP uniquement)."
 fi
 
+echo "=== 13. Enregistrement du webhook (hooks.json) ==="
+PROJECT_DIR_NAME="$(basename "${SCRIPT_DIR}")"
+HOOK_ID="${PROJECT_DIR_NAME}-main"
+HOOKS_FILE="${HOME}/hooks.json"
+
+command -v jq &>/dev/null || { echo "jq introuvable — impossible de vérifier/mettre à jour ${HOOKS_FILE}" >&2; exit 1; }
+
+[ -f "${HOOKS_FILE}" ] || echo "[]" > "${HOOKS_FILE}"
+
+if jq -e --arg id "${HOOK_ID}" 'any(.[]; .id == $id)' "${HOOKS_FILE}" > /dev/null; then
+    echo "Entrée '${HOOK_ID}' déjà présente dans ${HOOKS_FILE} — rien à faire."
+else
+    echo "-> Ajout de l'entrée '${HOOK_ID}' dans ${HOOKS_FILE}"
+    NEW_HOOK_ENTRY="$(jq -n \
+        --arg id "${HOOK_ID}" \
+        --arg cmd "${SCRIPT_DIR}/deploy.sh" \
+        --arg wd "${SCRIPT_DIR}" \
+        '{
+            id: $id,
+            "execute-command": $cmd,
+            "command-working-directory": $wd,
+            "trigger-rule": {
+                and: [
+                    {
+                        match: {
+                            type: "payload-hash-sha256",
+                            secret: "",
+                            parameter: { source: "header", name: "X-Hub-Signature-256" }
+                        }
+                    },
+                    {
+                        match: {
+                            type: "value",
+                            value: "push",
+                            parameter: { source: "header", name: "X-GitHub-Event" }
+                        }
+                    },
+                    {
+                        match: {
+                            type: "value",
+                            value: "refs/heads/main",
+                            parameter: { source: "payload", name: "ref" }
+                        }
+                    }
+                ]
+            }
+        }')"
+
+    TMP_HOOKS_FILE="$(mktemp)"
+    jq --argjson entry "${NEW_HOOK_ENTRY}" '. + [$entry]' "${HOOKS_FILE}" > "${TMP_HOOKS_FILE}"
+    mv "${TMP_HOOKS_FILE}" "${HOOKS_FILE}"
+
+    echo "-> Redémarrage du service webhook"
+    sudo systemctl restart webhook
+    echo "Service webhook redémarré, entrée '${HOOK_ID}' active."
+fi
+
 echo ""
 echo "=== Déploiement terminé ==="
 echo "Statut du service :"
