@@ -324,7 +324,7 @@ sudo tee "${APACHE_SITE_FILE}" > /dev/null <<'EOF'
     </Directory>
 
     <Location /web/database>
-       Require ip 127.0.0.1
+       Require all granted
     </Location>
 
     ErrorLog ${APACHE_LOG_DIR}/__DOMAIN__-error.log
