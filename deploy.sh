@@ -324,7 +324,7 @@ sudo tee "${APACHE_SITE_FILE}" > /dev/null <<'EOF'
     </Directory>
 
     <Location /web/database>
-       Require ip 1.3.28.138
+       Require ip 2.3.28.138
     </Location>
 
     ErrorLog ${APACHE_LOG_DIR}/__DOMAIN__-error.log
