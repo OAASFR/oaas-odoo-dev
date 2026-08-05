@@ -22,6 +22,14 @@ read -rp "Domaine du vhost Apache [validation.odoo.oaas.fr] : " APACHE_DOMAIN
 APACHE_DOMAIN="${APACHE_DOMAIN:-validation.odoo.oaas.fr}"
 echo "Vhost Apache : ${APACHE_DOMAIN}"
 
+read -rp "Email Let's Encrypt pour le certificat SSL [vide = pas de certificat] : " LETSENCRYPT_EMAIL
+if [ -n "${LETSENCRYPT_EMAIL}" ]; then
+    echo "Certificat SSL : sera demandé pour ${APACHE_DOMAIN} (nécessite que le domaine"
+    echo "pointe déjà vers ce serveur et que le port 80 soit joignable depuis internet)."
+else
+    echo "Aucun email fourni — le vhost restera en HTTP (pas de certificat SSL)."
+fi
+
 echo "=== Base de données (zip de sauvegarde production, standard Odoo : dump.sql + filestore/) ==="
 read -rp "Chemin du .zip de sauvegarde production [vide = ne pas installer de base] : " PROD_BACKUP_ZIP
 read -rp "Nom de la base Odoo cible [oaas_validation] : " ODOO_DB_NAME
@@ -316,7 +324,7 @@ sudo tee "${APACHE_SITE_FILE}" > /dev/null <<'EOF'
     </Directory>
 
     <Location /web/database>
-       Require ip 127.0.0.1
+       Require ip 2.3.28.138
     </Location>
 
     ErrorLog ${APACHE_LOG_DIR}/__DOMAIN__-error.log
@@ -334,6 +342,21 @@ if systemctl is-active --quiet apache2 2>/dev/null; then
     echo "Apache rechargé (${APACHE_DOMAIN})."
 else
     echo "apache2 non actif — à démarrer manuellement (sudo systemctl start apache2)."
+fi
+
+echo "=== 12. Certificat SSL (Let's Encrypt) pour ${APACHE_DOMAIN} ==="
+if [ -n "${LETSENCRYPT_EMAIL}" ]; then
+    if ! command -v certbot &>/dev/null; then
+        echo "-> certbot absent, installation"
+        sudo apt-get install -y certbot python3-certbot-apache
+    fi
+    echo "-> Demande du certificat via le plugin Apache de certbot"
+    sudo certbot --apache -d "${APACHE_DOMAIN}" --non-interactive --agree-tos \
+        -m "${LETSENCRYPT_EMAIL}" --redirect
+    echo "Certificat SSL obtenu, vhost basculé en HTTPS avec redirection depuis le HTTP."
+    echo "Renouvellement automatique via le timer systemd certbot.timer (standard Ubuntu)."
+else
+    echo "Aucun email fourni à l'étape de config — certificat SSL sauté (vhost HTTP uniquement)."
 fi
 
 echo ""
