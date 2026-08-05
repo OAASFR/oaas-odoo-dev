@@ -15,6 +15,10 @@ ODOO_USER="${ODOO_OWNER%%:*}"
 ODOO_GROUP="${ODOO_OWNER##*:}"
 echo "Permissions : ${ODOO_OWNER}"
 
+read -rp "Domaine du vhost Apache [validation.odoo.oaas.fr] : " APACHE_DOMAIN
+APACHE_DOMAIN="${APACHE_DOMAIN:-validation.odoo.oaas.fr}"
+echo "Vhost Apache : ${APACHE_DOMAIN}"
+
 echo "=== Credentials GitHub (Personal Access Token si 2FA activé) ==="
 read -rp "GitHub username : " GH_USER
 read -rsp "GitHub password / token : " GH_PASS
@@ -204,51 +208,66 @@ sudo systemctl daemon-reload
 sudo systemctl enable odoo
 sudo systemctl restart odoo
 
-echo "=== 10. Configuration Apache ==="
-sudo setsebool -P httpd_can_network_connect on
-APACHE_CONF="/etc/httpd/conf.d/odoo-proxy.conf"
-sudo tee "${APACHE_CONF}" > /dev/null <<'EOF'
-ProxyPassMatch /hooks !
-ProxyPassMatch /mail !
-ProxyPass / http://127.0.0.1:8069/
-ProxyPassReverse / http://127.0.0.1:8069/
+echo "=== 10. Configuration Apache (Ubuntu / apache2, vhost dédié ${APACHE_DOMAIN}) ==="
+APACHE_SITE_FILE="/etc/apache2/sites-available/${APACHE_DOMAIN}.conf"
 
-<Location /websocket>
-  ProxyPass http://odoochat
-  ProxyPassReverse http://odoochat
+sudo a2enmod proxy proxy_http proxy_wstunnel rewrite headers expires > /dev/null
 
-  RewriteEngine On
-  RewriteCond %{HTTP:Upgrade} =websocket [NC]
-  RewriteRule /(.*) ws://odoochat/$1 [P,L]
+# Heredoc entièrement quoté : les placeholders Apache (%{...}, ${APACHE_LOG_DIR})
+# doivent rester littéraux, seul __DOMAIN__ est substitué ensuite via sed.
+sudo tee "${APACHE_SITE_FILE}" > /dev/null <<'EOF'
+<VirtualHost *:80>
+    ServerName __DOMAIN__
 
-  RequestHeader set Upgrade "websocket"
-  RequestHeader set Connection "Upgrade"
-  RequestHeader set X-Forwarded-Host "%{Host}i"
-  RequestHeader set X-Forwarded-For "%{proxy:clientip}i"
-  RequestHeader set X-Forwarded-Proto "%{scheme}e"
-  RequestHeader set X-Real-IP "%{REMOTE_ADDR}e"
-</Location>
+    ProxyPassMatch /hooks !
+    ProxyPassMatch /mail !
+    ProxyPass / http://127.0.0.1:8069/
+    ProxyPassReverse / http://127.0.0.1:8069/
 
-Alias /static/ /var/www/html/odoo/addons/static/
-Alias /web/ /var/www/html/odoo/web/
+    <Location /websocket>
+      ProxyPass http://odoochat
+      ProxyPassReverse http://odoochat
 
-<Directory /var/www/html/odoo/addons/static/>
-   Options FollowSymLinks
-   ExpiresActive On
-   ExpiresDefault "access plus 1 day"
-</Directory>
+      RewriteEngine On
+      RewriteCond %{HTTP:Upgrade} =websocket [NC]
+      RewriteRule /(.*) ws://odoochat/$1 [P,L]
 
-<Location /web/database>
-   Require ip 127.0.0.1
-</Location>
+      RequestHeader set Upgrade "websocket"
+      RequestHeader set Connection "Upgrade"
+      RequestHeader set X-Forwarded-Host "%{Host}i"
+      RequestHeader set X-Forwarded-For "%{proxy:clientip}i"
+      RequestHeader set X-Forwarded-Proto "%{scheme}e"
+      RequestHeader set X-Real-IP "%{REMOTE_ADDR}e"
+    </Location>
+
+    Alias /static/ /var/www/html/odoo/addons/static/
+    Alias /web/ /var/www/html/odoo/web/
+
+    <Directory /var/www/html/odoo/addons/static/>
+       Options FollowSymLinks
+       ExpiresActive On
+       ExpiresDefault "access plus 1 day"
+    </Directory>
+
+    <Location /web/database>
+       Require ip 127.0.0.1
+    </Location>
+
+    ErrorLog ${APACHE_LOG_DIR}/__DOMAIN__-error.log
+    CustomLog ${APACHE_LOG_DIR}/__DOMAIN__-access.log combined
+</VirtualHost>
 EOF
+sudo sed -i "s/__DOMAIN__/${APACHE_DOMAIN}/g" "${APACHE_SITE_FILE}"
 
-echo "Fichier Apache créé : ${APACHE_CONF}"
-if systemctl is-active --quiet httpd 2>/dev/null || systemctl is-active --quiet apache2 2>/dev/null; then
-    sudo systemctl reload httpd 2>/dev/null || sudo systemctl reload apache2 2>/dev/null || true
-    echo "Apache rechargé."
+sudo a2ensite "${APACHE_DOMAIN}" > /dev/null
+echo "Vhost créé et activé : ${APACHE_SITE_FILE}"
+
+if systemctl is-active --quiet apache2 2>/dev/null; then
+    sudo apache2ctl configtest
+    sudo systemctl reload apache2
+    echo "Apache rechargé (${APACHE_DOMAIN})."
 else
-    echo "Apache non actif — à démarrer manuellement si nécessaire."
+    echo "apache2 non actif — à démarrer manuellement (sudo systemctl start apache2)."
 fi
 
 echo ""
