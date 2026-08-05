@@ -213,6 +213,17 @@ for module in "${ADDON_MODULES[@]}"; do
 done
 sudo chown -R "${ODOO_OWNER}" "${ADDONS_DIR}"
 
+DEPLOY_MODULES_SCRIPT="${ODOO_DIR}/deploy-modules.sh"
+sudo cp "${SCRIPT_DIR}/deploy-modules.sh" "${DEPLOY_MODULES_SCRIPT}"
+sudo sed -i \
+    -e "s#__REPO_DIR__#${SCRIPT_DIR}#g" \
+    -e "s#__ADDONS_DIR__#${ADDONS_DIR}#g" \
+    -e "s#__ODOO_OWNER__#${ODOO_OWNER}#g" \
+    "${DEPLOY_MODULES_SCRIPT}"
+sudo chmod +x "${DEPLOY_MODULES_SCRIPT}"
+sudo chown "${ODOO_OWNER}" "${DEPLOY_MODULES_SCRIPT}"
+echo "deploy-modules.sh installé : ${DEPLOY_MODULES_SCRIPT}"
+
 echo "=== 9. Patches compatibilité Python 3.14 ==="
 "${ODOO_DIR}/.venv/bin/python3" - <<'PYEOF'
 import sys
@@ -378,8 +389,8 @@ else
     echo "-> Ajout de l'entrée '${HOOK_ID}' dans ${HOOKS_FILE}"
     NEW_HOOK_ENTRY="$(jq -n \
         --arg id "${HOOK_ID}" \
-        --arg cmd "${SCRIPT_DIR}/deploy.sh" \
-        --arg wd "${SCRIPT_DIR}" \
+        --arg cmd "${DEPLOY_MODULES_SCRIPT}" \
+        --arg wd "${ODOO_DIR}" \
         '{
             id: $id,
             "execute-command": $cmd,
