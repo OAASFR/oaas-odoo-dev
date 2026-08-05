@@ -3,12 +3,23 @@
 À cocher au fur et à mesure. Ordonnée par palier — respecter l'ordre,
 la trajectoire est séquentielle (16→17→18→19).
 
+**Code préparé** : les fixes des paliers 1 et 2 sont écrits et vérifiés
+statiquement (XML bien formés, Python compile) dans
+[`palier16-17/`](palier16-17/) et [`palier17-18/`](palier17-18/) — voir leurs
+README respectifs pour le détail. Les cases ci-dessous restent décochées
+tant qu'elles n'ont pas été **exécutées sur un environnement Odoo réel**
+(`--test-enable`, retests visuels) : écrire le code n'est pas la même chose
+que le valider en conditions réelles, et aucun environnement de test isolé
+n'existe à ce jour (voir `0. Prérequis infra`).
+
 ## 0. Prérequis infra (bloquant avant tout code)
 
 - [ ] Environnement de test isolé (clone de la DB + filestore de prod,
       **jamais migrer en place sur le serveur de production**)
 - [ ] Script de sauvegarde (`pg_dump` + filestore) avant toute opération,
-      avec procédure de restauration testée
+      avec procédure de restauration testée — préparé dans
+      [`scripts/backup_restore.sh`](scripts/backup_restore.sh), **non
+      encore testé faute d'environnement**
 - [ ] Secrets sortis de `deploy.sh` en clair (mot de passe PostgreSQL) vers
       un mécanisme de variables d'environnement / secret manager
 - [ ] Chaîne de déploiement unifiée (Docker vs bare-metal) pour que
