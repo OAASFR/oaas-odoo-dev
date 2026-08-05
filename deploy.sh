@@ -204,9 +204,13 @@ fi
 echo "=== 8. Déploiement des addons OAAS ==="
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ADDONS_DIR="${ODOO_DIR}/odoo-oaas-addons"
+ADDON_MODULES=(oaas_website_addons oaas_linkedin_addons)
 
 sudo mkdir -p "${ADDONS_DIR}"
-sudo cp -r "${SCRIPT_DIR}"/. "${ADDONS_DIR}/"
+for module in "${ADDON_MODULES[@]}"; do
+    sudo rm -rf "${ADDONS_DIR}/${module}"
+    sudo cp -r "${SCRIPT_DIR}/${module}" "${ADDONS_DIR}/"
+done
 sudo chown -R "${ODOO_OWNER}" "${ADDONS_DIR}"
 
 echo "=== 9. Patches compatibilité Python 3.14 ==="
