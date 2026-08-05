@@ -5,6 +5,9 @@ ODOO_DIR="/var/www/html/odoo"
 ODOO_BRANCH="16.0"
 ODOO_BIN="/usr/local/bin/odoo"
 SERVICE_FILE="/etc/systemd/system/odoo.service"
+# Même valeur écrite dans odoo.conf plus bas (réutilisée pour la restauration
+# de base) — secret en clair, dette connue, voir migration-odoo19/03-risques-infra.md
+ODOO_DB_PASSWORD="Maison63#123"
 
 echo "=== Mot de passe sudo (demandé une seule fois) ==="
 sudo -v
@@ -18,6 +21,20 @@ echo "Permissions : ${ODOO_OWNER}"
 read -rp "Domaine du vhost Apache [validation.odoo.oaas.fr] : " APACHE_DOMAIN
 APACHE_DOMAIN="${APACHE_DOMAIN:-validation.odoo.oaas.fr}"
 echo "Vhost Apache : ${APACHE_DOMAIN}"
+
+echo "=== Base de données (zip de sauvegarde production, standard Odoo : dump.sql + filestore/) ==="
+read -rp "Chemin du .zip de sauvegarde production [vide = ne pas installer de base] : " PROD_BACKUP_ZIP
+read -rp "Nom de la base Odoo cible [oaas_validation] : " ODOO_DB_NAME
+ODOO_DB_NAME="${ODOO_DB_NAME:-oaas_validation}"
+if [ -n "${PROD_BACKUP_ZIP}" ]; then
+    [ -f "${PROD_BACKUP_ZIP}" ] || { echo "Fichier introuvable : ${PROD_BACKUP_ZIP}" >&2; exit 1; }
+    for bin in unzip psql createdb dropdb; do
+        command -v "$bin" &>/dev/null || { echo "Commande '$bin' introuvable (paquet postgresql-client / unzip requis)" >&2; exit 1; }
+    done
+    echo "Base cible : ${ODOO_DB_NAME} (restaurée depuis ${PROD_BACKUP_ZIP})"
+else
+    echo "Aucun zip fourni — l'installation de base sera sautée (étape 7)."
+fi
 
 echo "=== Credentials GitHub (Personal Access Token si 2FA activé) ==="
 read -rp "GitHub username : " GH_USER
@@ -110,7 +127,7 @@ admin_passwd = $pbkdf2-sha512$25000$nfNeKyVkTKnVWitlTEnpnQ$69yRkdQZeNmjBNZ4vtmIr
 db_host = localhost
 db_port = False
 db_user = odoo
-db_password = Maison63#123
+db_password = __DB_PASSWORD__
 db_filter = .*
 addons_path = /var/www/html/odoo/odoo-oaas-addons,/var/www/html/odoo/addons
 limit_memory_hard = 1677721600
@@ -124,10 +141,59 @@ proxy_mode = True
 logfile = /var/www/html/odoo/log/odoo-server.log
 pidfile = /var/www/html/odoo/odoo.pid
 EOF
+sudo sed -i "s/__DB_PASSWORD__/${ODOO_DB_PASSWORD}/" "${ODOO_DIR}/odoo.conf"
 sudo chown "${ODOO_OWNER}" "${ODOO_DIR}/odoo.conf"
 sudo chmod 640 "${ODOO_DIR}/odoo.conf"
 
-echo "=== 7. Déploiement des addons OAAS ==="
+if [ -n "${PROD_BACKUP_ZIP}" ]; then
+    echo "=== 7. Installation de la base ${ODOO_DB_NAME} depuis ${PROD_BACKUP_ZIP} ==="
+    RESTORE_TMP="$(mktemp -d)"
+    trap 'rm -rf "${RESTORE_TMP}"' EXIT
+
+    echo "-> Extraction du zip"
+    unzip -q "${PROD_BACKUP_ZIP}" -d "${RESTORE_TMP}"
+
+    DUMP_FILE="${RESTORE_TMP}/dump.sql"
+    FILESTORE_SRC="${RESTORE_TMP}/filestore"
+    [ -f "${DUMP_FILE}" ] || {
+        echo "dump.sql introuvable dans le zip — format inattendu (attendu : export" >&2
+        echo "standard Odoo, zip contenant dump.sql + filestore/)" >&2
+        exit 1
+    }
+
+    echo "-> (Re)création de la base ${ODOO_DB_NAME}"
+    PGPASSWORD="${ODOO_DB_PASSWORD}" dropdb -h localhost -U odoo --if-exists "${ODOO_DB_NAME}"
+    PGPASSWORD="${ODOO_DB_PASSWORD}" createdb -h localhost -U odoo -O odoo "${ODOO_DB_NAME}"
+
+    echo "-> Import du dump SQL (peut prendre plusieurs minutes selon la taille de la base)"
+    PGPASSWORD="${ODOO_DB_PASSWORD}" psql -h localhost -U odoo -d "${ODOO_DB_NAME}" \
+        -q -v ON_ERROR_STOP=1 -f "${DUMP_FILE}"
+
+    if [ -d "${FILESTORE_SRC}" ]; then
+        FILESTORE_DST="/home/${ODOO_USER}/.local/share/Odoo/filestore/${ODOO_DB_NAME}"
+        echo "-> Restauration du filestore vers ${FILESTORE_DST}"
+        echo "   (chemin par défaut Odoo, data_dir non fixé dans odoo.conf — à vérifier"
+        echo "   si ce comportement change un jour)"
+        sudo mkdir -p "$(dirname "${FILESTORE_DST}")"
+        sudo rm -rf "${FILESTORE_DST}"
+        sudo cp -r "${FILESTORE_SRC}" "${FILESTORE_DST}"
+        sudo chown -R "${ODOO_OWNER}" "${FILESTORE_DST}"
+    else
+        echo "-> Pas de filestore/ dans le zip, ignoré."
+    fi
+
+    rm -rf "${RESTORE_TMP}"
+    trap - EXIT
+
+    echo "!! Base restaurée telle quelle depuis un export production : tokens/clés API"
+    echo "   (LinkedIn, IA...) et données réelles présents tel quel sur cet environnement."
+    echo "   Neutraliser manuellement avant de considérer les intégrations sortantes sûres"
+    echo "   à tester (voir migration-odoo19/03-risques-infra.md)."
+else
+    echo "=== 7. Installation de la base : sautée (aucun zip fourni) ==="
+fi
+
+echo "=== 8. Déploiement des addons OAAS ==="
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ADDONS_DIR="${ODOO_DIR}/odoo-oaas-addons"
 
@@ -135,7 +201,7 @@ sudo mkdir -p "${ADDONS_DIR}"
 sudo cp -r "${SCRIPT_DIR}"/. "${ADDONS_DIR}/"
 sudo chown -R "${ODOO_OWNER}" "${ADDONS_DIR}"
 
-echo "=== 8. Patches compatibilité Python 3.14 ==="
+echo "=== 9. Patches compatibilité Python 3.14 ==="
 "${ODOO_DIR}/.venv/bin/python3" - <<'PYEOF'
 import sys
 
@@ -203,12 +269,12 @@ for p in patches:
     print(f"  [patché] {p['file']}")
 PYEOF
 
-echo "=== 9. Activation et démarrage du service Odoo ==="
+echo "=== 10. Activation et démarrage du service Odoo ==="
 sudo systemctl daemon-reload
 sudo systemctl enable odoo
 sudo systemctl restart odoo
 
-echo "=== 10. Configuration Apache (Ubuntu / apache2, vhost dédié ${APACHE_DOMAIN}) ==="
+echo "=== 11. Configuration Apache (Ubuntu / apache2, vhost dédié ${APACHE_DOMAIN}) ==="
 APACHE_SITE_FILE="/etc/apache2/sites-available/${APACHE_DOMAIN}.conf"
 
 sudo a2enmod proxy proxy_http proxy_wstunnel rewrite headers expires > /dev/null
