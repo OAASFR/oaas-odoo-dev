@@ -413,7 +413,7 @@ else
 
     TMP_HOOKS_FILE="$(mktemp)"
     jq --argjson entry "${NEW_HOOK_ENTRY}" '. + [$entry]' "${HOOKS_FILE}" > "${TMP_HOOKS_FILE}"
-    mv "${TMP_HOOKS_FILE}" "${HOOKS_FILE}"
+    mv -f "${TMP_HOOKS_FILE}" "${HOOKS_FILE}"
 
     echo "-> Redémarrage du service webhook"
     sudo systemctl restart webhook
